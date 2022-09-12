@@ -7,7 +7,18 @@ import {
   Part
 } from "lit-html/directive";
 import { unsafeStatic } from "lit-html/static";
-import _ from "lodash";
+
+const htmlEscape: { [key: string]: string } = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}
+
+function escapeStr(str: string) {
+  return str.replace(/[&<>"']/g, (m: string) => htmlEscape[m])
+}
 
 class SpreadDirective extends Directive {
   prevProps = new Map();
@@ -16,7 +27,7 @@ class SpreadDirective extends Directive {
     return unsafeStatic(
       Object.entries(props)
         .filter(([k, v]) => v != null && v !== nothing && v !== false)
-        .map(([k, v]) => (v === true ? k : `${k}="${_.escape(String(v))}"`))
+        .map(([k, v]) => (v === true ? k : `${k}="${escapeStr(String(v))}"`))
         .join(" ")
     );
   }
