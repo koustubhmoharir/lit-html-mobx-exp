@@ -3,8 +3,7 @@
 import { html } from "lit-html";
 import { action, makeObservable, observable } from "mobx";
 import { Button } from "../components/Button";
-import { component } from "../lib/component";
-import { ljsx } from "../lib/ljsx";
+import { component, ljsx } from "../core";
 
 class PageState {
   constructor() {

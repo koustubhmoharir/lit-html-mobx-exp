@@ -1,8 +1,6 @@
 import { html } from "lit-html";
 import { RefOrCallback } from "lit-html/directives/ref";
-import { component } from "../lib/component";
-import { ref } from "../lib/directives/ref";
-import { spread } from "../lib/directives/spread";
+import { component, ref, spread } from "../core";
 
 interface ButtonProps {
   rootRef?: RefOrCallback;

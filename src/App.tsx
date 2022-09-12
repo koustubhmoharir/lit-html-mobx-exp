@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Page as LitPage } from "./Pages/Page";
-import { reactComponent } from "./lib/reactComponent";
+import { reactComponent } from "./core";
 
 const Page = reactComponent(LitPage);
 
