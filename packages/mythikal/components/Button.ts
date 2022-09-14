@@ -1,4 +1,6 @@
 import { component, html } from "realithy";
+import styles from "./Button.module.scss";
+import "./Button.scss";
 
 interface ButtonProps {
     text: string;
@@ -7,7 +9,7 @@ interface ButtonProps {
 
 class ButtonState {
     render(props: ButtonProps) {
-        return html`<button @click=${props.onClick}>${props.text}</button>`;
+        return html`<button class="${styles.test} gtest" @click=${props.onClick}>${props.text}</button>`;
     }
 }
 

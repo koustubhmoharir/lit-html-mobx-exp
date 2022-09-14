@@ -15,9 +15,7 @@
     "prebuild": "npm run clean",
     "build:ts": "tsc --build",
     "build": "npm run build:ts && webpack --mode production",
-    "start:babel": "npm run build:babel -- --watch",
-    "start:ts": "npm run build:ts -- --watch",
-    "start": "npm-run-all --parallel start:*",
+    "start": "webpack --mode development --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

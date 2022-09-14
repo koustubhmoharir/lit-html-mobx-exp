@@ -1,7 +1,12 @@
 {
     "extends": "../../tsconfig_baselib.json",
     "compilerOptions": {
-        "tsBuildInfoFile": "_cache/.tsbuildinfo"
+        "tsBuildInfoFile": "_cache/.tsbuildinfo",
+        "plugins": [
+            {
+                "name": "typescript-plugin-css-modules"
+            }
+        ]
     },
     "include": [
         "./index.ts",
