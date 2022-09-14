@@ -2,12 +2,15 @@
   "name": "realithy",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
-  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./jsx-runtime": "./jsx-runtime.ts"
+  },
+  "types": "./index.d.ts",
   "scripts": {
-    "clean": "rimraf ./dist _cache",
+    "clean": "rimraf ./dist ./_cache ./**/*.d.ts  ./**/*.d.ts.map",
     "prebuild": "npm run clean",
-    "build:babel": "babel --root-mode upward ./src --out-dir ./dist --extensions \".ts\"",
+    "build:babel": "babel --root-mode upward . --out-dir ./dist --extensions \".ts\"",
     "build:ts": "tsc --build",
     "build": "npm run build:babel && npm run build:ts",
     "start:babel": "npm run build:babel -- --watch",

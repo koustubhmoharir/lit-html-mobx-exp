@@ -1,11 +1,11 @@
 {
     "extends": "../../tsconfig_baselib.json",
     "compilerOptions": {
-        "tsBuildInfoFile": "_cache/.tsbuildinfo",
-        "rootDir": "src",
-        "outDir": "dist",
+        "tsBuildInfoFile": "_cache/.tsbuildinfo"
     },
     "include": [
-        "src"
+        "./index.ts",
+        "./jsx-runtime.ts",
+        "./src/**/*"
     ]
 }

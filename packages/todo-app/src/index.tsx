@@ -1,4 +1,5 @@
-import { html, render, component } from "realithy";
+/** @jsxImportSource realithy */
+import { html, render, component,  } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 
 class State {
@@ -14,7 +15,7 @@ class State {
         App();
     }
 
-    render(props: {}) {
+    render(props: { i: number }) {
         return html`<div>
 <input @input=${this.onChange} .value=${this.name}>
 <span>
@@ -25,6 +26,6 @@ Hello, ${this.name}</span>`
 const Comp = component(State);
 
 function App() {
-    render(html`${Comp({})}`, document.body);
+    render(html`${<Comp i={1} />}`, document.body);
 }
 App();
