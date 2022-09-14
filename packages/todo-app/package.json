@@ -19,6 +19,7 @@
   "dependencies": {
     "@babel/runtime": "^7.19.0",
     "lodash": "^4.17.21",
-    "realithy": "*"
+    "realithy": "*",
+    "mythikal": "*"
   }
 }

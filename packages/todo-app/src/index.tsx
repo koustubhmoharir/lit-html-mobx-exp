@@ -1,6 +1,7 @@
 /** @jsxImportSource realithy */
-import { html, render, component,  } from "realithy";
+import { html, render, component, } from "realithy";
 import { observable, makeObservable, action } from "mobx";
+import { Button } from "mythikal";
 
 class State {
     constructor() {
@@ -9,17 +10,26 @@ class State {
     @observable
     name = "";
 
+    @observable
+    dispName = "";
+
     @action.bound
     onChange(e: { target: { value: string } }) {
         this.name = e.target.value;
         App();
     }
 
+    @action.bound
+    onUpdate() {
+        this.dispName = this.name;
+    }
+
     render(props: { i: number }) {
         return html`<div>
 <input @input=${this.onChange} .value=${this.name}>
+${<Button text="Update" onClick={this.onUpdate}/>}
 <span>
-Hello, ${this.name}</span>`
+Hello, ${this.dispName}</span>`
     }
 }
 

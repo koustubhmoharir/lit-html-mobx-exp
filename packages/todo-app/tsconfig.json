@@ -5,6 +5,7 @@
     },
     "include": ["src"],
     "references": [
-        {"path": "../realithy"}
+        {"path": "../realithy"},
+        {"path": "../mythikal"}
     ]
 }

@@ -1,3 +1,11 @@
 {
-    "ignore": ["./dist", "./**/*.d.ts"]
+    "ignore": ["./dist", "./**/*.d.ts"],
+    "presets": [
+        [
+            "@babel/preset-typescript",
+            {
+                "optimizeConstEnums": true
+            }
+        ]
+    ]
 }
