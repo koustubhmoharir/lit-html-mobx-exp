@@ -5,8 +5,8 @@ import {
   DirectiveParameters,
   ElementPart,
   Part
-} from "lit-html/directive";
-import { unsafeStatic } from "lit-html/static";
+} from "lit-html/directive.js";
+import { unsafeStatic } from "lit-html/static.js";
 
 const htmlEscape: { [key: string]: string } = {
   '&': '&amp;',

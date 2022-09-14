@@ -1,7 +1,8 @@
-import { directive } from "lit-html/directive";
-import { AsyncDirective, PartInfo } from "lit-html/async-directive";
+import { directive } from "lit-html/directive.js";
+import { AsyncDirective, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
 
+/** @internal */
 export function trackDirective(syncDirective: any) {
   const OrigDirectiveClass = (syncDirective(
     undefined as any,

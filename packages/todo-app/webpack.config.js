@@ -11,6 +11,9 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         clean: true
     },
+    resolve: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '...']
+    },
     module: {
         rules: [
             {
@@ -19,6 +22,7 @@ module.exports = {
                 use: {
                     loader: 'babel-loader',
                     options: {
+                        rootMode: "upward",
                         cacheDirectory: true
                     }
                 }

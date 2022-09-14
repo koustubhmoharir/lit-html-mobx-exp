@@ -1,5 +1,5 @@
-import { directive } from "lit-html/directive";
-import { AsyncDirective, PartInfo } from "lit-html/async-directive";
+import { directive } from "lit-html/directive.js";
+import { AsyncDirective, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
 
 interface State<Props> {
@@ -12,11 +12,14 @@ interface StateConstructor<Props> {
   new (initialProps: Props): State<Props>;
 }
 
-export function component<Props>(cls: StateConstructor<Props>) {
+type Component<Props> = (props: Props) => unknown;
+
+export function component<Props>(cls: StateConstructor<Props>): Component<Props> {
   class ComponentDirective extends AsyncDirective {
     constructor(partInfo: PartInfo) {
       super(partInfo);
       this._connect();
+      console.log(`${cls.name} constructor called`);
     }
     private reaction!: Reaction;
     private _connect() {
