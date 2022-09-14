@@ -6,6 +6,7 @@
   "scripts": {
     "check-types": "tsc --build",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rimraf ./dist",
     "start": "webpack-dev-server --mode development",
     "build": "npm run check-types && webpack --mode production"
   },
