@@ -1,3 +1,9 @@
 {
-    "typescript.tsdk": "node_modules\\typescript\\lib"
+    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "files.exclude": {
+        "**/*.d.ts": true,
+        "**/*.d.ts.map": true,
+        "**/node_modules/**": true,
+        "**/_cache/**": true
+    }
 }
