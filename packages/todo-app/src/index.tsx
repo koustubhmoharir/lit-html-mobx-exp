@@ -16,7 +16,6 @@ class State {
     @action.bound
     onChange(e: { target: { value: string } }) {
         this.name = e.target.value;
-        App();
     }
 
     @action.bound
@@ -30,6 +29,10 @@ class State {
 ${<Button text="Update" onClick={this.onUpdate}/>}
 <span>
 Hello, ${this.dispName}</span>`
+    }
+
+    renderCompleted() {
+        console.log("App render completed");
     }
 }
 

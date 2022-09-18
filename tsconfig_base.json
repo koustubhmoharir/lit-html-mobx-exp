@@ -3,6 +3,7 @@
         "experimentalDecorators": true,
         "target": "esnext",
         "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
         "strict": true,
         "jsx": "react-jsx"
     }

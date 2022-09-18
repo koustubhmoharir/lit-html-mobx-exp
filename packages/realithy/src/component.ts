@@ -1,9 +1,13 @@
+import { noChange } from "lit-html";
 import { directive } from "lit-html/directive.js";
 import { AsyncDirective, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
+import { pushCompleteRenderCallback, renderInContext } from "./render";
+import { shallowEqual } from "./shallowEqual"
 
 interface State<Props> {
   render(props: Props): unknown;
+  renderCompleted?(): void;
   disconnected?(): void;
   reconnected?(): void;
 }
@@ -19,7 +23,6 @@ export function component<Props>(cls: StateConstructor<Props>): Component<Props>
     constructor(partInfo: PartInfo) {
       super(partInfo);
       this._connect();
-      console.log(`${cls.name} constructor called`);
     }
     private reaction!: Reaction;
     private _connect() {
@@ -30,19 +33,27 @@ export function component<Props>(cls: StateConstructor<Props>): Component<Props>
     private state?: State<Props>;
 
     render(props: Props) {
-      console.log(cls.name + " render started");
+      const skipRender = this.state !== undefined && shallowEqual(this._props, props);
       this._props = props;
       if (this.state === undefined) this.state = new cls(props);
+      if (skipRender) return noChange;
+      return this.renderState();
+    }
+    private renderState() {
+      const s = this.state;
+      if (!s) return;
+      const rc = s.renderCompleted?.bind(s);
+      if (rc) {
+        pushCompleteRenderCallback(rc);
+      }
       let result;
       this.reaction.track(() => {
-        result = this.state!.render(this._props);
+        result = s.render(this._props);
       });
-      console.log(cls.name + " render ended");
       return result;
     }
     readonly rerender = () => {
-      console.log(cls.name + " rerender triggered");
-      this.setValue(this.render(this._props));
+      renderInContext(() => this.setValue(this.renderState()));
     };
 
     disconnected() {

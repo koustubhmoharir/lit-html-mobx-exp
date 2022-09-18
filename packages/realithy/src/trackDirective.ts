@@ -1,6 +1,7 @@
 import { directive } from "lit-html/directive.js";
 import { AsyncDirective, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
+import { renderInContext } from "./render";
 
 /** @internal */
 export function trackDirective(syncDirective: any) {
@@ -35,7 +36,7 @@ export function trackDirective(syncDirective: any) {
       return result;
     }
     readonly rerender = () => {
-      this.setValue(this.update.apply(this, this._prevArgs));
+      renderInContext(() => this.setValue(this.update.apply(this, this._prevArgs)));
     };
 
     disconnected() {
