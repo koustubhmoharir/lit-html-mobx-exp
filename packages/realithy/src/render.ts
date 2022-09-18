@@ -1,5 +1,10 @@
 import { render as renderLith } from "lit-html";
 export { isTemplateResult } from "lit-html/directive-helpers.js"
+import { configure } from "mobx"
+
+configure({
+    enforceActions: "never",
+})
 
 class RenderContext {
     private _callbacks: Array<() => void> = [];
