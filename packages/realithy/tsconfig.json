@@ -1,7 +1,8 @@
 {
     "extends": "../../tsconfig_baselib.json",
     "compilerOptions": {
-        "tsBuildInfoFile": "_cache/.tsbuildinfo"
+        "tsBuildInfoFile": "_cache/.tsbuildinfo",
+        "skipLibCheck": true
     },
     "include": [
         "./index.ts",

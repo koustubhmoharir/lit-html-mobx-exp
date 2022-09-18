@@ -9,14 +9,26 @@
   "dependencies": {
     "realithy": "*"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.19.1",
+    "@storybook/addon-actions": "^6.5.12",
+    "@storybook/addon-essentials": "^6.5.12",
+    "@storybook/addon-links": "^6.5.12",
+    "@storybook/builder-webpack5": "^6.5.12",
+    "@storybook/manager-webpack5": "^6.5.12",
+    "@storybook/web-components": "^6.5.12",
+    "babel-loader": "^8.2.5",
+    "lit-html": "^2.3.1"
+  },
   "scripts": {
-    "clean": "rimraf ./dist ./_cache ./**/*.d.ts  ./**/*.d.ts.map",
+    "clean": "rimraf ./dist ./_cache ./**/!(Globals).d.ts  ./**/*.d.ts.map",
     "prebuild": "npm run clean",
     "build:ts": "tsc --build",
     "build": "npm run build:ts && webpack --mode production",
     "start": "webpack --mode development --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "repository": {
     "type": "git",

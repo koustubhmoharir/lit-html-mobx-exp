@@ -6,7 +6,8 @@
             {
                 "name": "typescript-plugin-css-modules"
             }
-        ]
+        ],
+        "skipLibCheck": true
     },
     "include": [
         "./index.ts",
