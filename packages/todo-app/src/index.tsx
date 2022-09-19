@@ -1,5 +1,5 @@
 /** @jsxImportSource realithy */
-import { html, render, component, repeat, } from "realithy";
+import { html, render, controllerView, innerView, repeat, } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { Button } from "mythikal";
 
@@ -14,6 +14,50 @@ class Item {
 
     @observable
     text: string;
+
+    @action.bound
+    dropItem(id: number) {
+        const list = this.parent;
+        const item = list.parent.getItemById(id);
+        if (!item) return;
+        list.moveItem(item, list.items.indexOf(this));
+    }
+
+    static view = innerView(
+        function render(viewState) {
+            console.log("render item: ", this.id);
+            return html`
+            <div style="padding: 1rem" draggable="true" @dragstart=${viewState.dragStart} @dragover=${viewState.dragOver}
+                @drop=${viewState.drop}>
+                ${this.id} - ${this.text}
+            </div>`
+        },
+        class ItemViewState {
+            constructor(readonly model: Item) { }
+
+            dragStart = (e: DragEvent) => {
+                console.log(`Drag start: ${this.model.id}`);
+                if (!e.dataTransfer) return;
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text", String(this.model.id));
+            }
+
+            dragOver = (e: DragEvent) => e.preventDefault();
+
+            drop = (e: DragEvent) => {
+                e.preventDefault();
+                const idStr = e.dataTransfer?.getData("text");
+                console.log(`Dropped: ${idStr}`);
+                if (!idStr) return;
+                const id = Number(idStr);
+                this.model.dropItem(id);
+            }
+        }
+    );
+
+    render() {
+        return Item.view(this);
+    }
 }
 
 class List {
@@ -41,64 +85,29 @@ class List {
     }
 
     @action.bound
-    moveItem(item: Item, other: List, index: number) {
-        const selfInd = this.items.indexOf(item);
-        if (selfInd < 0) return;
-        this.items.splice(selfInd, 1);
-        other.items.splice(index, 0, new Item(other, item.text, item.id));
+    moveItem(item: Item, index: number) {
+        const pList = item.parent;
+        const srcInd = pList.items.indexOf(item);
+        pList.items.splice(srcInd, 1);
+        this.items.splice(index, 0, pList === this ? item : new Item(this, item.text, item.id));
     }
 
     readonly items = observable.array([] as Item[], { deep: false });
-}
 
-class ListViewState {
-    constructor({state}: {state: List}) {
-        this.list = state;
-    }
-    private list: List;
-
-    render({ state }: { state: List }) {
-        return html`<div style="display: flex; flex-direction: column">
-            <input .value=${state.newItemText} @input=${(e: any) => state.newItemText = e.target.value}></input>
-            <button @click=${state.addNewItem}>Add</button>
-            ${repeat(state.items, i => i.id, i => this.renderItem(i))}
-        </div>`
-    }
-
-    dragStart(e: DragEvent, item: Item) {
-        console.log(`Drag start: ${item.id}`);
-        if (!e.dataTransfer) return;
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text", String(item.id));
-    }
-
-    drop(e: DragEvent, onItem: Item) {
-        e.preventDefault();
-        const idStr = e.dataTransfer?.getData("text");
-        console.log(`Dropped: ${idStr}`);
-        if (!idStr) return;
-        const id = Number(idStr);
-
-        const listParent = this.list.parent;
-        const item = listParent.getItemById(id);
-        if (!item) return;
-        const tList = listParent.list1 === item.parent ? listParent.list2 : listParent.list1;
-        item.parent.moveItem(item, tList, tList.items.indexOf(onItem));
-    }
-
-    renderItem(item: Item) {
+    static view = innerView<List>(function render() {
+        console.log("rendering list", this.newItemText);
         return html`
-        <div style="padding: 1rem" draggable="true"
-            @dragstart=${(e: DragEvent) => this.dragStart(e, item)}
-            @dragover=${(e: DragEvent) => e.preventDefault()}
-            @drop=${(e: DragEvent) => this.drop(e, item)}
-            >
-            ${item.id} - ${item.text}
+        <div style="display: flex; flex-direction: column">
+            <input .value=${this.newItemText} @input=${(e: any)=> this.newItemText = e.target.value}></input>
+            <button @click=${this.addNewItem}>Add</button>
+            ${repeat(this.items, "id", "render")}
         </div>`;
+    })
+
+    render() {
+        return List.view(this);
     }
 }
-
-const ListView = component(ListViewState);
 
 class State {
     constructor() {
@@ -117,16 +126,17 @@ class State {
     }
 
     render() {
-        return html`<div style="display: flex; flex-direction: row">
-        ${<ListView state={this.list1}/>}
-        ${<ListView state={this.list2}/>}
+        return html`
+        <div style="display: flex; flex-direction: row">
+            ${this.list1.render()}
+            ${this.list2.render()}
         </div>`
     }
 }
 
-const Comp = component(State);
+const Comp = controllerView(State);
 
 function App() {
-    render(html`${<Comp />}`, document.body);
+    render(html`${<Comp  />}`, document.body);
 }
 App();

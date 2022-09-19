@@ -1,50 +1,26 @@
-import { directive } from "lit-html/directive.js";
-import { AsyncDirective, PartInfo } from "lit-html/async-directive.js";
-import { Reaction } from "mobx";
-import { renderInContext } from "./render";
+import { directive, Part } from "lit-html/directive.js";
+import { PartInfo } from "lit-html/async-directive.js";
+import { ReactiveDirective } from "./ReactiveDirective";
 
 /** @internal */
-export function trackDirective(syncDirective: any) {
-  const OrigDirectiveClass = (syncDirective(
-    undefined as any,
-    undefined as any
-  ) as any)["_$litDirective$"];
+export function trackDirective(syncDirective: any, skipUpdate?: (prevArgs: any[], args: any[]) => boolean) {
+    const OrigDirectiveClass = (syncDirective() as any)["_$litDirective$"];
 
-  class WrappedDirective extends AsyncDirective {
-    constructor(partInfo: PartInfo) {
-      super(partInfo);
-      this.state = new OrigDirectiveClass(partInfo);
-      this._connect();
+    class WrappedDirective extends ReactiveDirective<any[]> {
+        constructor(partInfo: PartInfo) {
+            super(partInfo);
+            this.state = new OrigDirectiveClass(partInfo);
+        }
+        private state: any;
+        render(...args: any[]) {
+            return this.state.render.apply(this.state, args as any);
+        }
+        protected get renderCompleteCallback() { return undefined; }
+        protected skipUpdate(oldArgs: any[], newArgs: any[]) { return skipUpdate?.(oldArgs, newArgs) ?? false; }
+        protected updateActual(part: Part, args: any[]) {
+            return this.state.update.call(this.state, part, args);
+        }
     }
-    private state: any;
-    private reaction!: Reaction;
-    private _connect() {
-      this.reaction = new Reaction(this.constructor.name, this.rerender);
-    }
-
-    render(...args: any[]) {
-      this.state.render.apply(this.state, args as any);
-    }
-
-    private _prevArgs!: any[];
-    update(...args: any[]) {
-      this._prevArgs = args;
-      let result: any = undefined;
-      this.reaction.track(() => {
-        result = this.state.update.apply(this.state, args as any);
-      });
-      return result;
-    }
-    readonly rerender = () => {
-      renderInContext(() => this.setValue(this.update.apply(this, this._prevArgs)));
-    };
-
-    disconnected() {
-      this.reaction.dispose();
-    }
-    reconnected() {
-      this._connect();
-    }
-  }
-  return directive(WrappedDirective);
+    
+    return directive(WrappedDirective);
 }

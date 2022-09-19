@@ -1,4 +1,4 @@
-import { component, html } from "realithy";
+import { controllerView, html } from "realithy";
 import styles from "./Button.module.scss";
 import "./Button.scss";
 
@@ -13,4 +13,4 @@ class ButtonState {
     }
 }
 
-export const Button = component(ButtonState);
+export const Button = controllerView(ButtonState);
