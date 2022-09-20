@@ -61,7 +61,7 @@ class Item {
 }
 
 class List {
-    constructor(readonly parent: State) {
+    constructor(readonly parent: PageState) {
         makeObservable(this);
     }
 
@@ -109,7 +109,7 @@ class List {
     }
 }
 
-class State {
+class PageState {
     constructor() {
         //makeObservable(this);
     }
@@ -134,9 +134,9 @@ class State {
     }
 }
 
-const Comp = controllerView(State);
+const Page = controllerView(PageState);
 
 function App() {
-    render(html`${<Comp  />}`, document.body);
+    render(html`${<Page  />}`, document.body);
 }
 App();
