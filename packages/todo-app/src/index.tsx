@@ -60,8 +60,9 @@ class Item {
     }
 }
 
+
 class List {
-    constructor(readonly parent: PageState) {
+    constructor(readonly parent: PageState, readonly id: number) {
         makeObservable(this);
     }
 
@@ -95,13 +96,14 @@ class List {
     readonly items = observable.array([] as Item[], { deep: false });
 
     static view = innerView<List>(function render() {
-        console.log("rendering list", this.newItemText);
+        console.log("rendering List", this.id);
         return html`
         <div style="display: flex; flex-direction: column">
             <input .value=${this.newItemText} @input=${(e: any)=> this.newItemText = e.target.value}></input>
             <button @click=${this.addNewItem}>Add</button>
-            ${repeat(this.items, "id", "render")}
+            ${repeat(this.items)}
         </div>`;
+
     })
 
     render() {
@@ -114,9 +116,9 @@ class PageState {
         //makeObservable(this);
     }
 
-    readonly list1 = new List(this);
+    readonly list1 = new List(this, 1);
 
-    readonly list2 = new List(this);
+    readonly list2 = new List(this, 2);
 
     getItemById(id: number) {
         let item = this.list1.items.find(i => i.id === id);

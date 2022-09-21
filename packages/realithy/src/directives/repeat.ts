@@ -7,10 +7,13 @@ const trackedRepeat = trackDirective(repeatSync, ([pl], [cl]) => {
     return skip;
 });
 
-type KeyOfType<T, V> = keyof {
-    [P in keyof T as T[P] extends V ? P : never]: any
+interface Presentable {
+    render(): unknown;
 }
 
-export function repeat<T>(list: readonly T[], idProperty: keyof T, render: KeyOfType<T, () => unknown>): ReturnType<typeof repeatSync> {
-    return trackedRepeat(list, (item: T) => item[idProperty], (item: T) => (item[render] as any).call(item));
+const identity = <T>(x: T) => x;
+const render = <T extends Presentable>(item: T) => item.render();
+
+export function repeat<T extends Presentable>(list: readonly T[]): ReturnType<typeof repeatSync> {
+    return trackedRepeat(list, identity, render);
 }

@@ -2,6 +2,7 @@
     "extends": "../../tsconfig_base.json",
     "compilerOptions": {
         "noEmit": true,
+        "skipLibCheck": true
     },
     "include": ["src"],
     "references": [
