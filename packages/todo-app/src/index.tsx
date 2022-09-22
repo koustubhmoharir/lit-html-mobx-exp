@@ -1,5 +1,5 @@
 /** @jsxImportSource realithy */
-import { html, render, controllerView, innerView, repeat, } from "realithy";
+import { html, render, controllerView, innerView, repeat } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { Button } from "mythikal";
 
