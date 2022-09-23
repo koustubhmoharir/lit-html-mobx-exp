@@ -1,7 +1,12 @@
 /** @jsxImportSource realithy */
-import { html, render, controllerView, innerView, repeat } from "realithy";
+import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { Button } from "mythikal";
+
+
+interface DropItemData { itemId: number; }
+const onDropItem = Symbol();
+const DropItem = eventData<DropItemData>().link(onDropItem);
 
 class Item {
     constructor(readonly parent: List, text: string, id?: number) {
@@ -17,10 +22,7 @@ class Item {
 
     @action.bound
     dropItem(id: number) {
-        const list = this.parent;
-        const item = list.parent.getItemById(id);
-        if (!item) return;
-        list.moveItem(item, list.items.indexOf(this));
+        DropItem.dispatch(this, { itemId: id });
     }
 
     static view = innerView(
@@ -111,10 +113,12 @@ class List {
     }
 }
 
-class PageState {
+class PageState implements Handler<typeof DropItem> {
     constructor() {
         //makeObservable(this);
     }
+
+    get parent() { return undefined; }
 
     readonly list1 = new List(this, 1);
 
@@ -125,6 +129,15 @@ class PageState {
         if (item) return item;
         item = this.list2.items.find(i => i.id === id);
         return item;
+    }
+
+    [onDropItem](target: Model, e: EventArgs<DropItemData>) {
+        if (target instanceof Item) {
+            const list = target.parent;
+            const item = this.getItemById(e.data.itemId);
+            if (!item) return;
+            list.moveItem(item, list.items.indexOf(target));
+        }
     }
 
     render() {

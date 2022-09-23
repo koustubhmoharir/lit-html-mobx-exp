@@ -65,3 +65,8 @@ export const pt = {
 type DtoSpecType<S extends DtoSpec> = { [K in keyof S]: PropType<ReturnType<S[K]>> };
 
 export type DtoType<D extends () => DtoSpec> = DtoSpecType<ReturnType<D>>;
+
+export interface Model {
+    readonly parent: Model | undefined;
+    render(): unknown;
+}

@@ -5,4 +5,6 @@ export { repeat } from "./src/directives/repeat";
 export { spread } from "./src/directives/spread";
 export { render } from "./src/render";
 export { pt } from "./src/Model";
-export type { DtoType } from "./src/Model";
+export type { Model, DtoType } from "./src/Model";
+export type { ModelEvent, EventArgs, Handler } from "./src/Events";
+export { eventData } from "./src/Events";
