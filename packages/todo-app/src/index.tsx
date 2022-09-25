@@ -1,7 +1,7 @@
 /** @jsxImportSource realithy */
 import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { Button } from "mythikal";
+import { input, Button } from "mythikal";
 
 
 interface DropItemData { itemId: number; }
@@ -101,7 +101,7 @@ class List {
         console.log("rendering List", this.id);
         return html`
         <div style="display: flex; flex-direction: column">
-            <input .value=${this.newItemText} @input=${(e: any)=> this.newItemText = e.target.value}></input>
+            ${input(this, "newItemText")}
             <button @click=${this.addNewItem}>Add</button>
             ${repeat(this.items)}
         </div>`;

@@ -1,7 +1,8 @@
 import { directive, DirectiveResult } from "lit-html/directive.js";
-import { Keyed, keyed } from "lit-html/directives/keyed.js";
+import { Keyed, keyed, MultiKeyed, multiKeyed } from "./directives/keyed";
 import { shallowEqual } from "./shallowEqual"
 import { ReactiveDirective } from "./ReactiveDirective";
+import { safeIndex } from "./Utils";
 
 interface State<Props> {
     render(props: Props): unknown;
@@ -10,23 +11,26 @@ interface State<Props> {
     reconnected?(): void;
 }
 
-interface StateConstructor<Props> {
-    new(initialProps: Props): State<Props>;
+interface StateConstructor<Args extends unknown[], Props> {
+    new(...args: Args): State<Props>;
 }
 
-type Component<Props> = (props: Props) => unknown;
+type Component<Args extends unknown[], Props> = (...args: [...Args, Props]) => unknown;
 
-export function controllerView<Props>(cls: StateConstructor<Props>): Component<Props> {
-
-    class ComponentDirective extends ReactiveDirective<[Props]> {
+export function controllerView<Args extends unknown[], Props>(cls: StateConstructor<Args, Props>, keys: Args["length"]): Component<Args, Props> {
+    type RArgs = [...Args, Props];
+    class ComponentDirective extends ReactiveDirective<RArgs> {
         private state?: State<Props>;
-        render(props: Props) {
+        render(...rr: RArgs) {
             console.log("render", cls.name);
-            if (this.state === undefined) this.state = new cls(props);
-            return this.state.render(props);
+            if (this.state === undefined) {
+                const args = keys === rr.length ? rr : rr.slice(0, keys);
+                this.state = new (cls as any)(...args);
+            }
+            return this.state!.render.call(this.state!, safeIndex(rr, keys) as Props);
         }
-        protected skipUpdate([oldProps]: [Props], [newProps]: [Props]) {
-            return shallowEqual(oldProps, newProps);
+        protected skipUpdate(o: RArgs, n: RArgs) {
+            return shallowEqual(safeIndex(o, keys), safeIndex(n, keys));
         }
         protected get renderCompleteCallback() {
             return this.state?.renderCompleted?.bind(this.state);
@@ -41,7 +45,8 @@ export function controllerView<Props>(cls: StateConstructor<Props>): Component<P
         }
     }
 
-    return directive(ComponentDirective);
+    const dir = directive(ComponentDirective);
+    return (...rr: RArgs) => multiKeyed(dir(...rr), rr.slice(0, rr.length - 1));
 }
 
 interface ViewState<Model> {
@@ -60,7 +65,7 @@ export function innerView<Model, VS extends ViewState<Model>>(template: (this: M
 
 export function innerView<Model, VS extends ViewState<Model> | {} = {}>(template: (this: Model, vm: VS) => unknown, ViewStateClass?: VS extends ViewState<Model> ? ViewStateConstructor<Model, VS> : undefined) {
     const dir = ViewStateClass ? makeViewStateDirective(template as any, ViewStateClass) : makeStatelessDiretive(template as any);
-    return (m: Model) => keyed(m, dir(m));
+    return (m: Model) => keyed(dir(m), m);
 }
 function makeStatelessDiretive<Model>(template: () => unknown) {
     class ComponentDirective extends ReactiveDirective<[Model]> {

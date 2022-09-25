@@ -13,4 +13,4 @@ class ButtonState {
     }
 }
 
-export const Button = controllerView(ButtonState);
+export const Button = controllerView(ButtonState, 0);

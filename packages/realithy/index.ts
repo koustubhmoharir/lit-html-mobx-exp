@@ -1,3 +1,4 @@
+export type { KeyOfType } from "./src/TypeUtils";
 export { html } from "lit-html";
 export { controllerView, innerView } from "./src/component";
 export { ref } from "./src/directives/ref";

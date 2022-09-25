@@ -1,0 +1,1 @@
+export type KeyOfType<M, T> = keyof { [K in keyof M as M[K] extends T ? K : never]: M[K] };
