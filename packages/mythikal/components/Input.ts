@@ -1,12 +1,13 @@
-import { controllerView, html, KeyOfType } from "realithy";
+import { controllerView, html, KeyOfType, ref } from "realithy";
+import { ComponentProps } from "./Component";
 
-interface InputProps {
+interface InputProps extends ComponentProps {
     
 }
 
 type TextProperty<M> = KeyOfType<M, string>;
 
-class Input<M, InputProps> {
+class Input<M> {
     constructor(private source: M, private textProperty: TextProperty<M>) {
 
     }
@@ -17,7 +18,7 @@ class Input<M, InputProps> {
         }
 
         const value = this.source[this.textProperty];
-        return html`<input .value=${value} @input=${onChange}></input>`;
+        return html`<input ${ref(props?.root)} .value=${value} @input=${onChange}></input>`;
     }
 }
 

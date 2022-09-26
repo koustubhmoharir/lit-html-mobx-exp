@@ -1,3 +1,5 @@
+import { RenderResult } from "./render";
+
 type PrimitiveName = "string" | "boolean" | "number";
 interface PrimitiveTypeMap {
     string: string;
@@ -68,5 +70,5 @@ export type DtoType<D extends () => DtoSpec> = DtoSpecType<ReturnType<D>>;
 
 export interface Model {
     readonly parent: Model | undefined;
-    render(): unknown;
+    render(): RenderResult;
 }

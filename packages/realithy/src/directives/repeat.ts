@@ -1,5 +1,6 @@
 import { repeat as repeatSync } from "lit-html/directives/repeat.js";
 import { isObservable } from "mobx";
+import { RenderResult } from "../render";
 import { trackDirective } from "../trackDirective";
 
 const trackedRepeat = trackDirective(repeatSync, ([pl], [cl]) => {
@@ -14,6 +15,6 @@ interface Presentable {
 const identity = <T>(x: T) => x;
 const render = <T extends Presentable>(item: T) => item.render();
 
-export function repeat<T extends Presentable>(list: readonly T[]): ReturnType<typeof repeatSync> {
-    return trackedRepeat(list, identity, render);
+export function repeat<T extends Presentable>(list: readonly T[]): RenderResult {
+    return trackedRepeat(list, identity, render) as RenderResult;
 }

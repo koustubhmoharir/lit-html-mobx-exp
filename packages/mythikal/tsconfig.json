@@ -4,7 +4,10 @@
         "tsBuildInfoFile": "_cache/.tsbuildinfo",
         "plugins": [
             {
-                "name": "typescript-plugin-css-modules"
+                "name": "typescript-plugin-css-modules",
+                "options": {
+                    "classnameTransform": "camelCaseOnly"
+                }
             }
         ],
         "skipLibCheck": true

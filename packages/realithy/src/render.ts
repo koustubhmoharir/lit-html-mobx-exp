@@ -2,6 +2,9 @@ import { render as renderLith } from "lit-html";
 export { isTemplateResult } from "lit-html/directive-helpers.js"
 import { configure } from "mobx"
 
+interface TemplateOrDirectiveResult { values: unknown[]; }
+export type RenderResult = TemplateOrDirectiveResult | null;
+
 configure({
     enforceActions: "never",
 })
@@ -21,7 +24,7 @@ class RenderContext {
 }
 let renderContext: RenderContext | undefined;
 
-export function render(value: unknown, container: HTMLElement | DocumentFragment) {
+export function render(value: RenderResult, container: HTMLElement | DocumentFragment) {
     let rootPart;
     renderInContext(() => rootPart = renderLith(value, container));
     return rootPart;

@@ -1,7 +1,7 @@
 /** @jsxImportSource realithy */
-import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model } from "realithy";
+import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model, RenderResult } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { input, Button } from "mythikal";
+import { input, button } from "mythikal";
 
 
 interface DropItemData { itemId: number; }
@@ -63,7 +63,7 @@ class Item {
 }
 
 
-class List {
+class List implements Model {
     constructor(readonly parent: PageState, readonly id: number) {
         makeObservable(this);
     }
@@ -102,7 +102,7 @@ class List {
         return html`
         <div style="display: flex; flex-direction: column">
             ${input(this, "newItemText")}
-            <button @click=${this.addNewItem}>Add</button>
+            ${button({ onClick: this.addNewItem, content: "Add" })}
             ${repeat(this.items)}
         </div>`;
 
@@ -149,9 +149,9 @@ class PageState implements Handler<typeof DropItem> {
     }
 }
 
-const Page = controllerView(PageState);
+const Page = controllerView(PageState, 0) as () => RenderResult;
 
 function App() {
-    render(html`${<Page  />}`, document.body);
+    render(Page(), document.body);
 }
 App();

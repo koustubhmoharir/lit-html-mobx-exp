@@ -1,11 +1,13 @@
-import { directive, DirectiveResult } from "lit-html/directive.js";
 import { Keyed, keyed, MultiKeyed, multiKeyed } from "./directives/keyed";
 import { shallowEqual } from "./shallowEqual"
 import { ReactiveDirective } from "./ReactiveDirective";
 import { safeIndex } from "./Utils";
+import { RenderResult } from "./render";
+import { contentDirective } from "./directives/contentDirective";
+import { Model } from "./Model";
 
 interface State<Props> {
-    render(props: Props): unknown;
+    render(props: Props): RenderResult;
     renderCompleted?(): void;
     disconnected?(): void;
     reconnected?(): void;
@@ -15,7 +17,7 @@ interface StateConstructor<Args extends unknown[], Props> {
     new(...args: Args): State<Props>;
 }
 
-type Component<Args extends unknown[], Props> = (...args: [...Args, Props]) => unknown;
+type Component<Args extends unknown[], Props> = (...args: [...Args, Props]) => RenderResult;
 
 export function controllerView<Args extends unknown[], Props>(cls: StateConstructor<Args, Props>, keys: Args["length"]): Component<Args, Props> {
     type RArgs = [...Args, Props];
@@ -45,46 +47,46 @@ export function controllerView<Args extends unknown[], Props>(cls: StateConstruc
         }
     }
 
-    const dir = directive(ComponentDirective);
+    const dir = contentDirective(ComponentDirective);
     return (...rr: RArgs) => multiKeyed(dir(...rr), rr.slice(0, rr.length - 1));
 }
 
-interface ViewState<Model> {
-    readonly model: Model;
+interface ViewState<M extends Model> {
+    readonly model: M;
     renderCompleted?(): void;
     disconnected?(): void;
     reconnected?(): void;
 }
-interface ViewStateConstructor<Model, C extends ViewState<Model>> {
-    new(model: Model): C;
+interface ViewStateConstructor<M extends Model, C extends ViewState<M>> {
+    new(model: M): C;
 }
 
-export function innerView<Model>(template: (this: Model) => unknown): (model: Model) => DirectiveResult<typeof Keyed>;
+export function innerView<M extends Model>(template: (this: M) => RenderResult): (model: M) => RenderResult;
 
-export function innerView<Model, VS extends ViewState<Model>>(template: (this: Model, vm: VS) => unknown, ViewStateClass: ViewStateConstructor<Model, VS>): (model: Model) => DirectiveResult<typeof Keyed>;
+export function innerView<M extends Model, VS extends ViewState<M>>(template: (this: M, vm: VS) => RenderResult, ViewStateClass: ViewStateConstructor<M, VS>): (model: M) => RenderResult;
 
-export function innerView<Model, VS extends ViewState<Model> | {} = {}>(template: (this: Model, vm: VS) => unknown, ViewStateClass?: VS extends ViewState<Model> ? ViewStateConstructor<Model, VS> : undefined) {
+export function innerView<M extends Model, VS extends ViewState<M> | {} = {}>(template: (this: M, vm: VS) => RenderResult, ViewStateClass?: VS extends ViewState<M> ? ViewStateConstructor<M, VS> : undefined) {
     const dir = ViewStateClass ? makeViewStateDirective(template as any, ViewStateClass) : makeStatelessDiretive(template as any);
-    return (m: Model) => keyed(dir(m), m);
+    return (m: M) => keyed(dir(m), m);
 }
-function makeStatelessDiretive<Model>(template: () => unknown) {
-    class ComponentDirective extends ReactiveDirective<[Model]> {
-        render(m: Model) {
+function makeStatelessDiretive<M extends Model>(template: () => RenderResult) {
+    class ComponentDirective extends ReactiveDirective<[M]> {
+        render(m: M) {
             return template.call(m);
         }
         protected get renderCompleteCallback() { return undefined; }
-        protected skipUpdate([oldM]: [Model], [newM]: [Model]) {
+        protected skipUpdate([oldM]: [M], [newM]: [M]) {
             if (oldM !== newM) throw new Error("Model changed unexpectedly");
             return true;
         }
     }
 
-    return directive(ComponentDirective);
+    return contentDirective(ComponentDirective);
 }
-function makeViewStateDirective<Model, VS extends ViewState<Model>>(template: (this: Model, vm: VS) => unknown, ViewStateClass: ViewStateConstructor<Model, VS>) {
-    class ComponentDirective extends ReactiveDirective<[Model]> {
+function makeViewStateDirective<M extends Model, VS extends ViewState<M>>(template: (this: M, vm: VS) => RenderResult, ViewStateClass: ViewStateConstructor<M, VS>) {
+    class ComponentDirective extends ReactiveDirective<[M]> {
         private _vm?: VS;
-        render(m: Model) {
+        render(m: M) {
             if (!this._vm)
                 this._vm = new ViewStateClass(m);
             return template.call(this._vm.model, this._vm);
@@ -92,7 +94,7 @@ function makeViewStateDirective<Model, VS extends ViewState<Model>>(template: (t
         protected get renderCompleteCallback() {
             return this._vm?.renderCompleted?.bind(this._vm);
         }
-        protected skipUpdate([oldM]: [Model], [newM]: [Model]) {
+        protected skipUpdate([oldM]: [M], [newM]: [M]) {
             if (oldM !== newM) throw new Error("Model changed unexpectedly");
             return true;
         }
@@ -106,5 +108,5 @@ function makeViewStateDirective<Model, VS extends ViewState<Model>>(template: (t
         }
     }
 
-    return directive(ComponentDirective);
+    return contentDirective(ComponentDirective);
 }
