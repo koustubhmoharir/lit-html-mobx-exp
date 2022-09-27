@@ -1,8 +1,8 @@
-import { controllerView, html, KeyOfType, ref } from "realithy";
+import { controllerView, html, KeyOfType, ref, RenderResult } from "realithy";
 import { ComponentProps } from "./Component";
 
 interface InputProps extends ComponentProps {
-    
+    className?: string;
 }
 
 type TextProperty<M> = KeyOfType<M, string>;
@@ -22,4 +22,4 @@ class Input<M> {
     }
 }
 
-export const input: <M>(source: M, textProperty: TextProperty<M>, props?: InputProps) => unknown = controllerView(Input, 2);
+export const input: <M>(source: M, textProperty: TextProperty<M>, props?: InputProps) => RenderResult = controllerView(Input, 2);

@@ -1,5 +1,5 @@
 /dist
 /_cache
-*d.ts
+*.d.ts
 !Globals.d.ts
-*d.ts.map
+*.d.ts.map

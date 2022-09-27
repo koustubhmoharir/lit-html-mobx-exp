@@ -1,4 +1,4 @@
 /dist
 /_cache
-*d.ts
-*d.ts.map
+*.d.ts
+*.d.ts.map

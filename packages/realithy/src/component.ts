@@ -48,7 +48,7 @@ export function controllerView<Args extends unknown[], Props>(cls: StateConstruc
     }
 
     const dir = contentDirective(ComponentDirective);
-    return (...rr: RArgs) => multiKeyed(dir(...rr), rr.slice(0, rr.length - 1));
+    return (...rr: RArgs) => multiKeyed(dir(...rr), rr.slice(0, keys));
 }
 
 interface ViewState<M extends Model> {
