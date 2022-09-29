@@ -2,6 +2,7 @@ import { createPopper, Instance as Popper } from '@popperjs/core';
 import { nothing } from 'lit-html';
 import { createRef, RefOrCallback } from 'lit-html/directives/ref.js';
 import { controllerView, html, makeObservable, observable, ref, RenderResult } from 'realithy';
+import { clickAwayListener } from './ClickAwayListener';
 import { ComponentProps } from './Component';
 import styles from "./Menu.module.scss";
 
@@ -35,12 +36,22 @@ class Menu {
 
         return html`
         ${props.target({ ref: this._targetRef, toggle })}
-        ${this._open ? html`
-        <div ${ref(this._itemContainerRef)} class=${styles.itemsContainer}>
-            <ul>
-                ${props.items(this)}
-            </ul>
-        </div>` : nothing}
+        ${this._open ? (
+            html`
+            <div ${ref(this._itemContainerRef)} class=${styles.itemsContainer}>
+                ${clickAwayListener({ 
+                    content: () => html`
+                        <ul>
+                            ${props.items(this)}
+                        </ul>
+                        `,
+                    onClickAway: this.close,
+                    nodeRef: this._itemContainerRef
+                })}
+            </div>
+            `) : (
+                nothing
+            )}
         `;
     }
 
