@@ -2,6 +2,7 @@
 import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model, RenderResult } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { input, button } from "mythikal";
+import { workItems } from "./WorkItems";
 
 
 interface DropItemData { itemId: number; }
@@ -142,10 +143,14 @@ class PageState implements Handler<typeof DropItem> {
 
     render() {
         return html`
-        <div style="display: flex; flex-direction: row">
-            ${this.list1.render()}
-            ${this.list2.render()}
-        </div>`
+        <div>
+            <div style="display: flex; flex-direction: row">
+                ${this.list1.render()}
+                ${this.list2.render()}
+            </div>
+            ${workItems()}
+        </div>
+        `
     }
 }
 
