@@ -8,6 +8,7 @@
   "types": "./index.d.ts",
   "dependencies": {
     "@popperjs/core": "^2.11.6",
+    "bootstrap": "^5.2.2",
     "realithy": "*"
   },
   "devDependencies": {
