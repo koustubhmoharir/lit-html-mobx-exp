@@ -3,6 +3,12 @@ import { AsyncDirective, Part, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
 import { pushCompleteRenderCallback, renderInContext } from "./render";
 
+interface LifecycleMethods {
+    renderCompleted?(): void;
+    disconnected?(): void;
+    reconnected?(): void;
+}
+
 /** @internal */
 export abstract class ReactiveDirective<Args extends any[]> extends AsyncDirective {
     constructor(partInfo: PartInfo) {
@@ -36,11 +42,11 @@ export abstract class ReactiveDirective<Args extends any[]> extends AsyncDirecti
         return this.updateReactive();
     }
     protected skipUpdate(oldArgs: Args, newArgs: Args) { return false; }
-    protected abstract get renderCompleteCallback(): (() => void) | undefined;
+    protected abstract get lifecycleMethods(): LifecycleMethods | undefined;
     protected updateReactive() {
-        const rc = this.renderCompleteCallback;
-        if (rc) {
-            pushCompleteRenderCallback(rc);
+        const m = this.lifecycleMethods;
+        if (m?.renderCompleted) {
+            pushCompleteRenderCallback(m.renderCompleted, m);
         }
         let result;
         this.reaction.track(() => {
@@ -53,9 +59,11 @@ export abstract class ReactiveDirective<Args extends any[]> extends AsyncDirecti
     };
 
     disconnected() {
+        this.lifecycleMethods?.disconnected?.();
         this.reaction.dispose();
     }
     reconnected() {
         this._connect();
+        this.lifecycleMethods?.reconnected?.();
     }
 }

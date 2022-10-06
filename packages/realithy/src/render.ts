@@ -10,13 +10,14 @@ configure({
 })
 
 class RenderContext {
-    private _callbacks: Array<() => void> = [];
-    pushCallback(callback: () => void) {
-        this._callbacks.push(callback);
+    private _callbacks: Array<[() => void, unknown]> = [];
+    pushCallback(callback: () => void, thisArg: unknown) {
+        this._callbacks.push([callback, thisArg]);
     }
     completeRender() {
         for (let index = this._callbacks.length - 1; index >= 0; index--) {
-            this._callbacks[index]();
+            const [c, thisArg] = this._callbacks[index];
+            c.call(thisArg);
         }
         this._callbacks = [];
         renderContext = undefined;
@@ -37,8 +38,8 @@ export function renderInContext(render: () => void) {
     renderContext.completeRender();
 }
 /** @internal */
-export function pushCompleteRenderCallback(callback: () => void) {
+export function pushCompleteRenderCallback(callback: () => void, thisArg: unknown) {
     if (renderContext === undefined)
         throw new Error("render was called without a RenderContext");
-    renderContext.pushCallback(callback);
+    renderContext.pushCallback(callback, thisArg);
 }

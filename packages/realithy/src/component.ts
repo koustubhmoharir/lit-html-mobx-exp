@@ -34,16 +34,8 @@ export function controllerView<Args extends unknown[], Props>(cls: StateConstruc
         protected skipUpdate(o: RArgs, n: RArgs) {
             return shallowEqual(safeIndex(o, keys), safeIndex(n, keys));
         }
-        protected get renderCompleteCallback() {
-            return this.state?.renderCompleted?.bind(this.state);
-        }
-        disconnected() {
-            if (this.state?.disconnected) this.state.disconnected();
-            super.disconnected();
-        }
-        reconnected() {
-            super.reconnected();
-            if (this.state?.reconnected) this.state.reconnected();
+        protected get lifecycleMethods() {
+            return this.state;
         }
     }
 
@@ -74,7 +66,7 @@ function makeStatelessDiretive<M extends Model>(template: () => RenderResult) {
         render(m: M) {
             return template.call(m);
         }
-        protected get renderCompleteCallback() { return undefined; }
+        protected get lifecycleMethods() { return undefined; }
         protected skipUpdate([oldM]: [M], [newM]: [M]) {
             if (oldM !== newM) throw new Error("Model changed unexpectedly");
             return true;
@@ -91,20 +83,12 @@ function makeViewStateDirective<M extends Model, VS extends ViewState<M>>(templa
                 this._vm = new ViewStateClass(m);
             return template.call(this._vm.model, this._vm);
         }
-        protected get renderCompleteCallback() {
-            return this._vm?.renderCompleted?.bind(this._vm);
+        protected get lifecycleMethods() {
+            return this._vm;
         }
         protected skipUpdate([oldM]: [M], [newM]: [M]) {
             if (oldM !== newM) throw new Error("Model changed unexpectedly");
             return true;
-        }
-        disconnected() {
-            this._vm?.disconnected?.();
-            super.disconnected();
-        }
-        reconnected() {
-            super.reconnected();
-            this._vm?.reconnected?.();
         }
     }
 

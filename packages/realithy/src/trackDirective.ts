@@ -15,7 +15,7 @@ export function trackDirective(syncDirective: any, skipUpdate?: (prevArgs: any[]
         render(...args: any[]) {
             return this.state.render.apply(this.state, args as any);
         }
-        protected get renderCompleteCallback() { return undefined; }
+        protected get lifecycleMethods() { return undefined; }
         protected skipUpdate(oldArgs: any[], newArgs: any[]) { return skipUpdate?.(oldArgs, newArgs) ?? false; }
         protected updateActual(part: Part, args: any[]) {
             return this.state.update.call(this.state, part, args);
