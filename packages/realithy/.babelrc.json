@@ -1,6 +1,7 @@
 {
     "ignore": ["./dist", "./**/*.d.ts"],
     "presets": [
+        "@babel/preset-env",
         [
             "@babel/preset-typescript",
             {

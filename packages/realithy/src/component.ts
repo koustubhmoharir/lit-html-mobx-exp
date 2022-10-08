@@ -5,6 +5,8 @@ import { safeIndex } from "./Utils";
 import { RenderResult } from "./render";
 import { contentDirective } from "./directives/contentDirective";
 import { Model } from "./Model";
+import { PartInfo } from "lit-html/directive";
+import { html } from "lit-html";
 
 interface State<Props> {
     render(props: Props): RenderResult;
@@ -40,7 +42,7 @@ export function controllerView<Args extends unknown[], Props>(cls: StateConstruc
     }
 
     const dir = contentDirective(ComponentDirective);
-    return (...rr: RArgs) => multiKeyed(dir(...rr), rr.slice(0, keys));
+    return (...rr: RArgs) => html`${multiKeyed(dir(...rr), rr.slice(0, keys))}`;
 }
 
 interface ViewState<M extends Model> {
@@ -59,16 +61,23 @@ export function innerView<M extends Model, VS extends ViewState<M>>(template: (t
 
 export function innerView<M extends Model, VS extends ViewState<M> | {} = {}>(template: (this: M, vm: VS) => RenderResult, ViewStateClass?: VS extends ViewState<M> ? ViewStateConstructor<M, VS> : undefined) {
     const dir = ViewStateClass ? makeViewStateDirective(template as any, ViewStateClass) : makeStatelessDiretive(template as any);
-    return (m: M) => keyed(dir(m), m);
+    return (m: M) => html`${keyed(dir(m), m)}`;
 }
 function makeStatelessDiretive<M extends Model>(template: () => RenderResult) {
     class ComponentDirective extends ReactiveDirective<[M]> {
+        constructor(partInfo: PartInfo) {
+            super(partInfo);
+            console.log("create new ComponentDirective object");
+        }
         render(m: M) {
             return template.call(m);
         }
         protected get lifecycleMethods() { return undefined; }
         protected skipUpdate([oldM]: [M], [newM]: [M]) {
-            if (oldM !== newM) throw new Error("Model changed unexpectedly");
+            if (oldM !== newM) {
+                console.log("Model changed unexpectedly");
+                return false;
+            }
             return true;
         }
     }

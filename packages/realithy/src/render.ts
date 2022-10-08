@@ -9,17 +9,20 @@ configure({
     enforceActions: "never",
 })
 
+interface CompleteRender {
+    renderCompleted?(): void;
+}
+
 class RenderContext {
-    private _callbacks: Array<[() => void, unknown]> = [];
-    pushCallback(callback: () => void, thisArg: unknown) {
-        this._callbacks.push([callback, thisArg]);
+    private _objs: Array<CompleteRender> = [];
+    pushCompleteRender(obj: CompleteRender) {
+        this._objs.push(obj);
     }
     completeRender() {
-        for (let index = this._callbacks.length - 1; index >= 0; index--) {
-            const [c, thisArg] = this._callbacks[index];
-            c.call(thisArg);
+        for (let index = this._objs.length - 1; index >= 0; index--) {
+            this._objs[index].renderCompleted?.();
         }
-        this._callbacks = [];
+        this._objs = [];
         renderContext = undefined;
     }
 }
@@ -32,14 +35,14 @@ export function render(value: RenderResult, container: HTMLElement | DocumentFra
 }
 
 /** @internal */
-export function renderInContext(render: () => void) {
+export function renderInContext(render: () => void, thisArg?: any) {
     renderContext = new RenderContext();
-    render();
+    render.call(thisArg);
     renderContext.completeRender();
 }
 /** @internal */
-export function pushCompleteRenderCallback(callback: () => void, thisArg: unknown) {
+export function pushCompleteRender(obj: CompleteRender) {
     if (renderContext === undefined)
         throw new Error("render was called without a RenderContext");
-    renderContext.pushCallback(callback, thisArg);
+    renderContext.pushCompleteRender(obj);
 }

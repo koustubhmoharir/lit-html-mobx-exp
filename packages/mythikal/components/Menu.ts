@@ -11,12 +11,11 @@ interface MenuTargetProps {
 }
 
 interface MenuProps extends ComponentProps {
-    target: (p: MenuTargetProps) => RenderResult;
-    items: (menu: Menu) => RenderResult[];
+    
 }
 
-class Menu {
-    constructor() {
+class Menu<M> {
+    constructor(private source: M, private target: (m: M, p: MenuTargetProps) => RenderResult, private items: (m: M, menu: Menu<M>) => RenderResult[]) {
         makeObservable(this);
     }
 
@@ -34,11 +33,11 @@ class Menu {
         const toggle = () => { this._open = !this._open; }
 
         return html`
-        ${props.target({ ref: this._targetRef, toggle })}
+        ${this.target(this.source, { ref: this._targetRef, toggle })}
         ${this._open ? html`
         <div ${ref(this._itemContainerRef)} class=${styles.itemsContainer}>
             <ul>
-                ${props.items(this)}
+                ${this.items(this.source, this)}
             </ul>
         </div>` : nothing}
         `;
@@ -60,14 +59,14 @@ class Menu {
     }
 }
 
-export const menu = controllerView(Menu, 0);
+export const menu: <M>(source: M, target: (m: M, p: MenuTargetProps) => RenderResult, items: (m: M, menu: Menu<M>) => RenderResult[], props: MenuProps) => RenderResult = controllerView(Menu, 3);
 
 interface MenuItemProps extends ComponentProps {
     content: string | (() => RenderResult);
 }
 
 class MenuItem {
-    constructor(private menu: Menu) {
+    constructor(private menu: Menu<any>) {
 
     }
 

@@ -1,7 +1,7 @@
 /** @jsxImportSource realithy */
-import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model, RenderResult } from "realithy";
+import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model, RenderResult, KeyOfType, Test } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { input, button } from "mythikal";
+import { input, button, menu } from "mythikal";
 
 
 interface DropItemData { itemId: number; }
@@ -57,7 +57,7 @@ class Item {
         }
     );
 
-    render() {
+    render(): RenderResult {
         return Item.view(this);
     }
 }
@@ -102,20 +102,127 @@ class List implements Model {
         return html`
         <div style="display: flex; flex-direction: column">
             ${input(this, "newItemText")}
-            ${button({ onClick: this.addNewItem, content: "Add" })}
+            ${button(this, m => m.addNewItem(), {content: "Add" })}
             ${repeat(this.items)}
         </div>`;
 
-    })
+    });
 
-    render() {
+    // static template = template<List>`
+    //     <div style="display: flex; flex-direction: column">
+    //         ${inp({text: "newItemText"})}
+    //         ${btn({onClick: m => m.addNewItem(), content: "Add"})}
+    //         ${mnu({
+    //             target: btn({onClick: m => m.toggle(), content: "Menu", root: m.targetRef}),
+    //             items: props => []
+    //         })}
+    //         <span></span>
+    //     </div>
+    // `;
+
+    render(): RenderResult {
         return List.view(this);
+    }
+}
+
+
+// abstract class Template<T> {
+//     abstract render(m: T): RenderResult;
+// }
+
+// class HtmlTemplate<T> extends Template<T> {
+//     constructor(readonly strings: TemplateStringsArray, readonly values: TemplateExpression<T>[]) {
+//         super();
+//     }
+    
+//     render(m: T): RenderResult {
+//         return html(this.strings, ...this.values.map(v => {
+//             if (v instanceof HtmlTemplate)
+//                 return v.render(m);
+//             if (v instanceof Function) {
+//                 const r = v(m);
+//                 const render = (r as any).render;
+//                 if (render) return render.call(r);
+//                 return r;
+//             }
+//             return v;
+//         }));
+//     }
+// }
+
+// interface MnuProps<T> {
+//     target: Template<Menu<T>>;
+//     items: (props: unknown) => Template<T>[];
+// }
+// class MenuTemplate<T> extends Template<T> {
+//     constructor(readonly props: MnuProps<T>) {
+//         super();
+//     }
+//     menuTarget(m: T, props: { toggle: () => void; ref: unknown }) {
+//         this.props.target(props).render(m)
+//     }
+//     render(m: T) {
+//         return menu(m, {target:});
+//     }
+// }
+// function mnu<T>(props: MnuProps<T>): Template<T> {
+//     return {};
+// }
+
+// interface InpProps<T> {
+//     text: KeyOfType<T, string>
+// }
+// class InputTemplate<T> extends Template<T> {
+//     constructor(readonly props: InpProps<T>) { super(); }
+//     render(m: T) {
+//         return input(m, this.props.text);
+//     }
+// }
+// function inp<T>(props:InpProps<T>): Template<T> {
+//     return new InputTemplate(props);
+// }
+
+// interface BtnProps<T> {
+//     onClick: (m: T) => void;
+//     content: string;
+//     root?: unknown;
+// }
+// class ButtonTemplate<T> extends Template<T> {
+//     constructor(readonly props: BtnProps<T>) { super(); }
+//     render(m: T) {
+//         return button(m, this.props.onClick, {content: this.props.content, root: this.props.root});
+//     }
+// }
+// function btn<T>(props: BtnProps<T>): Template<T> {
+//     return new ButtonTemplate(props);
+// }
+
+// type TemplateExpression<T> = string | number | boolean | Template<T> | ((t: T) => string | number | boolean | Model);
+
+// function template<T>(strings: TemplateStringsArray, ...values: TemplateExpression<T>[]): HtmlTemplate<T> {
+//     return new HtmlTemplate<T>(strings, values);
+// }
+
+class KeyedTest {
+    constructor(readonly parent: PageState) {
+        this.id = ++KeyedTest.id;
+    }
+    id: number;
+    static id = 0;
+
+    static view = innerView<KeyedTest>(function render() {
+        return html`${String(this.id)}`;
+    });
+
+    render(): RenderResult {
+        return KeyedTest.view(this);
     }
 }
 
 class PageState implements Handler<typeof DropItem> {
     constructor() {
-        //makeObservable(this);
+        this.k = new KeyedTest(this);
+        makeObservable(this);
     }
 
     get parent() { return undefined; }
@@ -123,6 +230,8 @@ class PageState implements Handler<typeof DropItem> {
     readonly list1 = new List(this, 1);
 
     readonly list2 = new List(this, 2);
+
+    readonly test = new Test();
 
     getItemById(id: number) {
         let item = this.list1.items.find(i => i.id === id);
@@ -140,11 +249,19 @@ class PageState implements Handler<typeof DropItem> {
         }
     }
 
+    @observable.ref
+    k: KeyedTest;
+
     render() {
         return html`
-        <div style="display: flex; flex-direction: row">
-            ${this.list1.render()}
-            ${this.list2.render()}
+        <div style="display: flex; flex-direction: column">
+            ${this.test.render()}
+            ${button(this, m => m.k = new KeyedTest(this), {content:"Change"})}
+            ${this.k.render()}
+            <div style="display: flex; flex-direction: row">
+                ${this.list1.render()}
+                ${this.list2.render()}
+            </div>
         </div>`
     }
 }

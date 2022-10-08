@@ -5,5 +5,11 @@
         "**/*.d.ts.map": true,
         "**/node_modules/**": true,
         "**/_cache/**": true
-    }
+    },
+    "lit-html.format.enabled": false,
+    "lit-html.tags": [
+        "html",
+        "raw",
+        "template"
+    ]
 }

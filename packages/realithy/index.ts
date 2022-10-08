@@ -11,3 +11,4 @@ export type { Model, DtoType } from "./src/Model";
 export type { ModelEvent, EventArgs, Handler } from "./src/Events";
 export { eventData } from "./src/Events";
 export { observable, computed, makeObservable } from "mobx";
+export { Test } from "./src/test";

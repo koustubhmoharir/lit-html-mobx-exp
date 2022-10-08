@@ -1,7 +1,7 @@
 import { noChange } from "lit-html";
 import { AsyncDirective, Part, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
-import { pushCompleteRenderCallback, renderInContext } from "./render";
+import { pushCompleteRender, renderInContext } from "./render";
 
 interface LifecycleMethods {
     renderCompleted?(): void;
@@ -46,7 +46,7 @@ export abstract class ReactiveDirective<Args extends any[]> extends AsyncDirecti
     protected updateReactive() {
         const m = this.lifecycleMethods;
         if (m?.renderCompleted) {
-            pushCompleteRenderCallback(m.renderCompleted, m);
+            pushCompleteRender(m);
         }
         let result;
         this.reaction.track(() => {
@@ -59,10 +59,12 @@ export abstract class ReactiveDirective<Args extends any[]> extends AsyncDirecti
     };
 
     disconnected() {
+        console.log("disconnected");
         this.lifecycleMethods?.disconnected?.();
         this.reaction.dispose();
     }
     reconnected() {
+        console.log("reconnected");
         this._connect();
         this.lifecycleMethods?.reconnected?.();
     }
