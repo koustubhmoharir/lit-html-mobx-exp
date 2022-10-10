@@ -54,7 +54,7 @@ class ConditionalForm {
     fetchedCities?: string[] = undefined;
 
     @action.bound
-    onChangeCountry(e: Event) {
+    onChangeCountry(e: Event) { // TODO: Take (e.target as HTMLSelectElement).value here as arg
         this.fetchStates((e.target as HTMLSelectElement).value).then(r => {
             this.fetchedStates = r;
             this.fetchedCities = undefined;

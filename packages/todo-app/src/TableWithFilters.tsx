@@ -60,7 +60,6 @@ class TableWithFilters<T> {
     render(props: TableWithFiltersProps<T>) {
         this.rowItems = props.items;
         return html`
-            <!-- NOTE: Local class names are changed at runtime -->
             <table>
                 <thead>
                     <tr>

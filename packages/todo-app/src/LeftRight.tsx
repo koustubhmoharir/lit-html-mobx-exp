@@ -17,7 +17,7 @@ class Wrapper {
         `;
     }
 }
-const wrapper = controllerView(Wrapper, 0) as (props: WrapperProps) => RenderResult;
+const wrapper = controllerView(Wrapper, 0) as (props: WrapperProps) => RenderResult; // TODO: do innerview in place of controllerView
 //#endregion
 
 //#region Row
@@ -50,17 +50,17 @@ class Clickable {
         makeObservable(this);
     }
 
-    @observable.ref
+    @observable.ref // TODO: Use observable array only
     rows: Row[] = [];
 
     render(props: ClickableProps) {
         return html`
-        <button @click=${() => {
+        <button @click=${() => { // TODO: Put out
             let rand = Math.trunc(Math.random() * 100);
             this.rows = [...this.rows, new Row(this.rows.length + 1, rand)];
             props.postClick?.(rand);
         }}>Add</button>
-        <button @click=${() => {
+        <button @click=${() => { // TODO: Put out
             this.rows = [];
             props.postClear?.();
         }}>Clear</button>
@@ -68,7 +68,7 @@ class Clickable {
         `;
     }
 }
-const clickable = controllerView(Clickable, 0) as (props: ClickableProps) => RenderResult;
+const clickable = controllerView(Clickable, 0) as (props: ClickableProps) => RenderResult; // TODO: This can't be a controller view
 //#endregion
 
 //#region TotalAndAverage
@@ -90,17 +90,18 @@ const totalAndAverage = controllerView(TotalAndAverage, 0);
 //#endregion
 
 //#region LeftRight
-class LeftRight {
-    constructor() {
-        makeObservable(this);
+class LeftRight { // TODO: Make state tree different from UI tree
+    // TODO: Two properties (Not props) named left and right
+    constructor() { // TODO: e.g. URL params are inputs to page
+        makeObservable(this); // TODO: API response will have properties - process it to create state - use to create state tree
     }
 
-    @observable.ref
+    @observable.ref // TODO: Use observable arrays only
     valueArray: number[] = [];
     
     render() {
         return html`
-        ${wrapper({
+        ${wrapper({ // UI components are leafs, won't be used in between
             child: wrapper({
                 child: clickable({
                     postClick: v => this.valueArray = [...this.valueArray, v],
@@ -118,5 +119,6 @@ class LeftRight {
         `;
     }
 }
-export const leftRight = controllerView(LeftRight, 0) as () => RenderResult;
+// TODO: Make nesting in the state tree
+export const leftRight = controllerView(LeftRight, 0) as () => RenderResult; // TODO: NOTE: ControllerView means view is coming from UI
 //#endregion
