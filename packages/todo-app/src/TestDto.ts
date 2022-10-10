@@ -21,3 +21,9 @@ const UserDS = () => ({
     //reportees: pt.ref(UserDS).array
 });
 type UserDto = DtoType<typeof UserDS>;
+
+// const User = model(UserDS, self => {
+
+
+
+// });

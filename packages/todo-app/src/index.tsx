@@ -1,12 +1,15 @@
 /** @jsxImportSource realithy */
-import { html, render, controllerView, innerView, repeat, eventData, EventArgs, Handler, Model, RenderResult, KeyOfType, Test } from "realithy";
+import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { input, button, menu } from "mythikal";
-
+import { input, button, menu, menuItem } from "mythikal";
 
 interface DropItemData { itemId: number; }
 const onDropItem = Symbol();
 const DropItem = eventData<DropItemData>().link(onDropItem);
+
+class DraggableDiv {
+
+}
 
 class Item {
     constructor(readonly parent: List, text: string, id?: number) {
@@ -20,45 +23,36 @@ class Item {
     @observable
     text: string;
 
-    @action.bound
+    @action
     dropItem(id: number) {
         DropItem.dispatch(this, { itemId: id });
     }
 
-    static view = innerView(
-        function render(viewState) {
-            console.log("render item: ", this.id);
-            return html`
-            <div style="padding: 1rem" draggable="true" @dragstart=${viewState.dragStart} @dragover=${viewState.dragOver}
-                @drop=${viewState.drop}>
-                ${this.id} - ${this.text}
-            </div>`
-        },
-        class ItemViewState {
-            constructor(readonly model: Item) { }
+    dragStart(e: DragEvent) {
+        console.log(`Drag start: ${this.id}`);
+        if (!e.dataTransfer) return;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text", String(this.id));
+    }
 
-            dragStart = (e: DragEvent) => {
-                console.log(`Drag start: ${this.model.id}`);
-                if (!e.dataTransfer) return;
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text", String(this.model.id));
-            }
+    drop(e: DragEvent) {
+        e.preventDefault();
+        const idStr = e.dataTransfer?.getData("text");
+        console.log(`Dropped: ${idStr}`);
+        if (!idStr) return;
+        const id = Number(idStr);
+        this.dropItem(id);
+    }
 
-            dragOver = (e: DragEvent) => e.preventDefault();
-
-            drop = (e: DragEvent) => {
-                e.preventDefault();
-                const idStr = e.dataTransfer?.getData("text");
-                console.log(`Dropped: ${idStr}`);
-                if (!idStr) return;
-                const id = Number(idStr);
-                this.model.dropItem(id);
-            }
-        }
-    );
+    static template = template<Item>`
+        <div style="padding: 1rem" draggable="true" @dragstart=${handleEvent((e, m) => m.dragStart(e as DragEvent))} @dragover=${handleEvent(e => e.preventDefault())}
+            @drop=${handleEvent((e, m) => m.drop(e as DragEvent))}>
+            ${bind(m => m.id)} - ${bind(m => m.text)}
+        </div>
+    `;
 
     render(): RenderResult {
-        return Item.view(this);
+        return Item.template.render(this);
     }
 }
 
@@ -70,24 +64,24 @@ class List implements Model {
 
     @observable
     newItemText = "";
-    @action.bound
+    @action
     addNewItem() {
         if (!this.newItemText) return;
         this.addItem(this.newItemText);
         this.newItemText = "";
     }
 
-    @action.bound
+    @action
     onChangeNewText(text: string) {
         this.newItemText = text;
     }
 
-    @action.bound
+    @action
     addItem(text: string) {
         this.items.push(new Item(this, text));
     }
 
-    @action.bound
+    @action
     moveItem(item: Item, index: number) {
         const pList = item.parent;
         const srcInd = pList.items.indexOf(item);
@@ -97,135 +91,84 @@ class List implements Model {
 
     readonly items = observable.array([] as Item[], { deep: false });
 
-    static view = innerView<List>(function render() {
-        console.log("rendering List", this.id);
-        return html`
+    static template = template<List>`
         <div style="display: flex; flex-direction: column">
-            ${input(this, "newItemText")}
-            ${button(this, m => m.addNewItem(), {content: "Add" })}
-            ${repeat(this.items)}
-        </div>`;
-
-    });
-
-    // static template = template<List>`
-    //     <div style="display: flex; flex-direction: column">
-    //         ${inp({text: "newItemText"})}
-    //         ${btn({onClick: m => m.addNewItem(), content: "Add"})}
-    //         ${mnu({
-    //             target: btn({onClick: m => m.toggle(), content: "Menu", root: m.targetRef}),
-    //             items: props => []
-    //         })}
-    //         <span></span>
-    //     </div>
-    // `;
+            ${input({value: bind(m => m.newItemText), onChange: (value, m) => m.newItemText = value })}
+            ${button({onClick: m => m.addNewItem(), label: "Add"})}
+            ${bindArray(m => m.items)}
+        </div>
+    `;
 
     render(): RenderResult {
-        return List.view(this);
+        return List.template.render(this);
     }
 }
 
 
-// abstract class Template<T> {
-//     abstract render(m: T): RenderResult;
-// }
-
-// class HtmlTemplate<T> extends Template<T> {
-//     constructor(readonly strings: TemplateStringsArray, readonly values: TemplateExpression<T>[]) {
-//         super();
-//     }
-    
-//     render(m: T): RenderResult {
-//         return html(this.strings, ...this.values.map(v => {
-//             if (v instanceof HtmlTemplate)
-//                 return v.render(m);
-//             if (v instanceof Function) {
-//                 const r = v(m);
-//                 const render = (r as any).render;
-//                 if (render) return render.call(r);
-//                 return r;
-//             }
-//             return v;
-//         }));
-//     }
-// }
-
-// interface MnuProps<T> {
-//     target: Template<Menu<T>>;
-//     items: (props: unknown) => Template<T>[];
-// }
-// class MenuTemplate<T> extends Template<T> {
-//     constructor(readonly props: MnuProps<T>) {
-//         super();
-//     }
-//     menuTarget(m: T, props: { toggle: () => void; ref: unknown }) {
-//         this.props.target(props).render(m)
-//     }
-//     render(m: T) {
-//         return menu(m, {target:});
-//     }
-// }
-// function mnu<T>(props: MnuProps<T>): Template<T> {
-//     return {};
-// }
-
-// interface InpProps<T> {
-//     text: KeyOfType<T, string>
-// }
-// class InputTemplate<T> extends Template<T> {
-//     constructor(readonly props: InpProps<T>) { super(); }
-//     render(m: T) {
-//         return input(m, this.props.text);
-//     }
-// }
-// function inp<T>(props:InpProps<T>): Template<T> {
-//     return new InputTemplate(props);
-// }
-
-// interface BtnProps<T> {
-//     onClick: (m: T) => void;
-//     content: string;
-//     root?: unknown;
-// }
-// class ButtonTemplate<T> extends Template<T> {
-//     constructor(readonly props: BtnProps<T>) { super(); }
-//     render(m: T) {
-//         return button(m, this.props.onClick, {content: this.props.content, root: this.props.root});
-//     }
-// }
-// function btn<T>(props: BtnProps<T>): Template<T> {
-//     return new ButtonTemplate(props);
-// }
-
-// type TemplateExpression<T> = string | number | boolean | Template<T> | ((t: T) => string | number | boolean | Model);
-
-// function template<T>(strings: TemplateStringsArray, ...values: TemplateExpression<T>[]): HtmlTemplate<T> {
-//     return new HtmlTemplate<T>(strings, values);
-// }
-
-class KeyedTest {
-    constructor(readonly parent: PageState) {
-        this.id = ++KeyedTest.id;
+class Test {
+    constructor() {
+        for (let index = 0; index < 5; index++) {
+            this.options.push(String(Math.random()));
+        }
+        this.selectedOption = this.options[0];
+        makeObservable(this);
     }
-    id: number;
-    static id = 0;
 
-    static view = innerView<KeyedTest>(function render() {
-        return html`${String(this.id)}`;
-    });
+    @observable
+    counter = 0;
 
-    render(): RenderResult {
-        return KeyedTest.view(this);
+    @observable
+    step = 1;
+
+    @observable
+    options = observable.array([] as string[]);
+
+    @observable
+    selectedOption = "";
+
+    increment() {
+        this.counter += this.step;
+        const i = Math.round(Math.random() * this.options.length + 2);
+        if (i >= this.options.length || this.options.length < 3)
+            this.options.push(String(Math.random()));
+        else if (i < 2)
+            this.options.splice(i, 1);
+        else
+            this.options[i] = String(Math.random());
+    }
+
+    static template = template<Test>`
+        <div>
+            <span>Click count is:</span>
+            <span>${bind(m => m.counter)}</span>
+            <br>
+            ${button({ onClick: m => m.increment(), label: "Increment" })}
+            <br>
+            <span>Increment by: </span>
+            ${menu({
+                content: button({ label: bind(m => String(m.step)), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
+                items: [1, 2, 3].map(i =>
+                    menuItem({ content: String(i), onClick: m => m.step = i })
+                )
+            })}
+            <br>
+            <span>Random options (generated on each increment): </span>
+            ${menu<Test, any, string>({
+                content: button({ label: bind(m => m.selectedOption || "(None)"), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
+                items: repeat(m => m.options, menuItem({ content: bind(item => item.value), onClick: item => item.parent.selectedOption = item.value }))
+            })}
+        </div>
+    `;
+
+    render() {
+        return Test.template.render(this);
     }
 }
 
 class PageState implements Handler<typeof DropItem> {
-    constructor() {
-        this.k = new KeyedTest(this);
-        makeObservable(this);
+    constructor(readonly parent: undefined, readonly parentView: undefined, readonly props: undefined) {
+        //makeObservable(this);
     }
-
-    get parent() { return undefined; }
 
     readonly list1 = new List(this, 1);
 
@@ -249,15 +192,11 @@ class PageState implements Handler<typeof DropItem> {
         }
     }
 
-    @observable.ref
-    k: KeyedTest;
 
     render() {
         return html`
         <div style="display: flex; flex-direction: column">
             ${this.test.render()}
-            ${button(this, m => m.k = new KeyedTest(this), {content:"Change"})}
-            ${this.k.render()}
             <div style="display: flex; flex-direction: row">
                 ${this.list1.render()}
                 ${this.list2.render()}
@@ -266,7 +205,7 @@ class PageState implements Handler<typeof DropItem> {
     }
 }
 
-const Page = controllerView(PageState, 0) as () => RenderResult;
+const Page = makeReactiveLithComponent(PageState) as unknown as () => RenderResult;
 
 function App() {
     render(Page(), document.body);

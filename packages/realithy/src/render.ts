@@ -7,6 +7,7 @@ export type RenderResult = TemplateOrDirectiveResult | null;
 
 configure({
     enforceActions: "never",
+    useProxies: "always"
 })
 
 interface CompleteRender {

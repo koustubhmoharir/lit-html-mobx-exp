@@ -1,7 +1,7 @@
 import { noChange } from "lit-html";
 import { AsyncDirective, Part, PartInfo } from "lit-html/async-directive.js";
 import { Reaction } from "mobx";
-import { pushCompleteRender, renderInContext } from "./render";
+import { pushCompleteRender, renderInContext, RenderResult } from "./render";
 
 interface LifecycleMethods {
     renderCompleted?(): void;
@@ -10,62 +10,82 @@ interface LifecycleMethods {
 }
 
 /** @internal */
-export abstract class ReactiveDirective<Args extends any[]> extends AsyncDirective {
+export abstract class ReactiveLithDirective<RenderArgs extends unknown[]> extends AsyncDirective {
     constructor(partInfo: PartInfo) {
         super(partInfo);
-        this._connect();
+        this._rerender = this._rerender.bind(this);
     }
-    private reaction!: Reaction;
-    private _connect() {
-        this.reaction = new Reaction(this.constructor.name, this.rerender);
+    private _reaction?: Reaction;
+    protected _connect() {
+        this._reaction = new Reaction(this.displayName, this._rerender);
     }
-    private _part?: Part;
-    private _args?: Args;
-    abstract render(...args: Args): unknown;
-    protected updateActual(_part: Part, args: Args) {
-        return this.render.apply(this, args);
+    protected _part?: Part;
+    protected _isDirty: boolean | undefined = undefined;
+    abstract get displayName(): string;
+    abstract storeArgs(args: RenderArgs): void;
+    abstract haveArgsChanged(args: RenderArgs): boolean;
+    abstract renderUntracked(): RenderResult;
+    get lifecycleMethods(): LifecycleMethods | undefined { return undefined; };
+    render(...args: RenderArgs) {
+        if (this._isDirty === undefined || this.haveArgsChanged(args))
+            this.storeArgs(args);
+        this.renderUntracked();
     }
-    
-    update(part: Part, args: Args) {
-        const oldPart = this._part;
-        const oldArgs = this._args;
-        this._part = part;
-        this._args = args;
-        if (oldPart) {
-            if (part !== oldPart) {
-                console.log("part changed"); // TODO: When does this occur?
-            }
-
-            if (this.skipUpdate(oldArgs!, args))
-                return noChange;
+    update(part: Part, args: RenderArgs) {
+        if (this._part && part !== this._part) {
+            throw new Error("part changed"); // TODO: When does this occur?
         }
-        return this.updateReactive();
+        this._part = part;
+        const first = this._isDirty === undefined;
+        this._isDirty = first || this.haveArgsChanged(args);
+        if (this._isDirty) {
+            if (!first)
+                this.lifecycleMethods?.disconnected?.();
+            this.storeArgs(args);
+        }
+        if (!this.isConnected)
+            return noChange;
+        if (first)
+            this._connect();
+        if (this._isDirty)
+            return this.updateReactive();
+        return noChange;
     }
-    protected skipUpdate(oldArgs: Args, newArgs: Args) { return false; }
-    protected abstract get lifecycleMethods(): LifecycleMethods | undefined;
+
     protected updateReactive() {
-        const m = this.lifecycleMethods;
-        if (m?.renderCompleted) {
-            pushCompleteRender(m);
+        this._isDirty = false;
+        const lm = this.lifecycleMethods;
+        if (lm?.renderCompleted) {
+            pushCompleteRender(lm);
         }
         let result;
-        this.reaction.track(() => {
-            result = this.updateActual(this._part!, this._args!);
+        this._reaction!.track(() => {
+            result = this.renderUntracked();
         });
         return result;
     }
-    readonly rerender = () => {
-        renderInContext(() => this.setValue(this.updateReactive()));
-    };
+    private _rerender() {
+        if (!this.isConnected) {
+            this._isDirty = true;
+            return;
+        }
+        this._rerenderActual();
+    }
+    private _rerenderActual() {
+        renderInContext(this._updateValue, this);
+    }
+    private _updateValue() {
+        this.setValue(this.updateReactive())
+    }
 
     disconnected() {
-        console.log("disconnected");
         this.lifecycleMethods?.disconnected?.();
-        this.reaction.dispose();
+        this._reaction?.dispose();
+        this._reaction = undefined;
     }
     reconnected() {
-        console.log("reconnected");
         this._connect();
         this.lifecycleMethods?.reconnected?.();
+        if (this._isDirty) this._rerenderActual();
     }
 }

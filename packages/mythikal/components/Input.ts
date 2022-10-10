@@ -1,25 +1,27 @@
-import { controllerView, html, KeyOfType, ref, RenderResult } from "realithy";
+import { Bindable, ComponentTemplate, html, KeyOfType, makeReactiveLithComponent, ReactiveLithComponent, ref, RenderResult, unbind } from "realithy";
 import { ComponentProps } from "./Component";
 
-interface InputProps extends ComponentProps {
-    className?: string;
+interface InputProps<M, V> extends ComponentProps<M, V> {
+    value: Bindable<M, V, string>;
+    onChange: (value: string, m: M, v: V) => void;
 }
+class Input<M, V> implements ReactiveLithComponent<M, V, InputProps<M, V>> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: InputProps<M, V>) { }
 
-type TextProperty<M> = KeyOfType<M, string>;
-
-class Input<M> {
-    constructor(private source: M, private textProperty: TextProperty<M>) {
-
+    handleEvent(event: InputEvent) {
+        if (event.target)
+            this.props.onChange?.((event.target as any).value, this.parent, this.parentView);
     }
 
-    render(props?: InputProps) {
-        const onChange = (e: { target: { value: string } }) => {
-            this.source[this.textProperty] = e.target.value as any;
-        }
-
-        const value = this.source[this.textProperty];
-        return html`<input ${ref(props?.root)} .value=${value} @input=${onChange}></input>`;
+    render() {
+        const root = unbind(this.parent, this.parentView, this.props.root);
+        const value = unbind(this.parent, this.parentView, this.props.value);
+        return html`<input ${ref(root)} .value=${value} @input=${this}></input>`;
     }
 }
 
-export const input: <M>(source: M, textProperty: TextProperty<M>, props?: InputProps) => RenderResult = controllerView(Input, 2);
+const inputComp = makeReactiveLithComponent(Input);
+
+export function input<M, V>(props: InputProps<M, V>): ComponentTemplate<M, V, InputProps<M, V>> {
+    return new ComponentTemplate(props, inputComp);
+}
