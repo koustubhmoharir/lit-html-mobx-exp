@@ -1,5 +1,5 @@
 import { RefOrCallback } from "lit-html/directives/ref";
-import { Bindable, ComponentTemplate, html, makeReactiveLithComponent, ReactiveLithComponent, ref, RenderResult, renderTemplateValue, TemplateValue, unbind } from "realithy";
+import { Bindable, ComponentTemplate, html, makeReactiveLithComponent, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, TemplateContent, unbind } from "realithy";
 import styles from "./Button.module.scss";
 import "./Button.scss";
 import { ComponentProps } from "./Component";
@@ -8,11 +8,11 @@ import { ComponentProps } from "./Component";
 interface ButtonProps<M, V> extends ComponentProps<M, V> {
     onClick: (m: M, v: V) => void;
     label: Bindable<M, V, string>;
-    content?: TemplateValue<M, V>;
+    content?: TemplateContent<M, V>;
     root?: Bindable<M, V, RefOrCallback>;
 }
 
-class Button<M, V> implements ReactiveLithComponent<M, V, ButtonProps<M, V>> {
+class Button_<M, V> implements ReactiveLithComponent<M, V, ButtonProps<M, V>> {
     constructor(readonly parent: M, readonly parentView: V, readonly props: ButtonProps<M, V>) {
     }
     handleEvent() {
@@ -27,13 +27,13 @@ class Button<M, V> implements ReactiveLithComponent<M, V, ButtonProps<M, V>> {
         const root = unbind(parent, parentView, props.root);
         return html`
         <button ${ref(root)} @click=${this}>
-            ${content === undefined ? label : renderTemplateValue(parent, parentView, content, this)}
+            ${content === undefined ? label : renderTemplateContent(parent, parentView, content, this)}
         </button>`;
     }
 }
 
-const buttonComp = makeReactiveLithComponent(Button);
+const buttonComp = makeReactiveLithComponent(Button_);
 
-export function button<M, V>(props: ButtonProps<M, V>): ComponentTemplate<M, V, ButtonProps<M, V>> {
+export function Button<M, V>(props: ButtonProps<M, V>): ComponentTemplate<M, V, ButtonProps<M, V>> {
     return new ComponentTemplate(props, buttonComp);
 }

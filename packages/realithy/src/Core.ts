@@ -5,13 +5,10 @@ import { repeat as repeatLith } from "lit-html/directives/repeat.js";
 import { makeObservable, observable, Reaction } from "mobx";
 import { contentDirective } from "./directives/contentDirective";
 import { ref } from "./directives/ref";
-import { RenderResult } from "./render";
+import { Primitive, RenderResult } from "./render";
 import { ReactiveLithDirective } from "./ReactiveDirective";
 import { arrayEquals, identity } from "./Utils";
 import { Model } from "./Model";
-
-
-export type Primitive = string | number | boolean | bigint | null | undefined;
 
 export class Binding<M, V, T> {
     constructor(readonly expression: (m: M, v: V) => T) { }
@@ -32,6 +29,12 @@ export interface EventHandlerContext<M, V> {
 
 export class HtmlTemplate<M, V> {
     constructor(private strings: TemplateStringsArray, private values: TemplateValue<M, V>[]) {
+        
+    }
+    private _displayName = "Template";
+    displayName(name: string) { this._displayName = name; return this; }
+    private _directive?: (parent: M, parentView: V) => RenderResult;
+    private createDirective() {
         const ht = this;
         class HtmlTemplateDirective extends ReactiveLithDirective<[M, V]> {
             constructor(partInfo: PartInfo) {
@@ -50,17 +53,23 @@ export class HtmlTemplate<M, V> {
                 return ht.renderUntracked(this.parent, this.parentView, this);
             }
             get displayName() { return ht._displayName; }
+            disconnected(): void {
+                super.disconnected();
+                console.log(this.displayName, "disconnected");
+            }
         }
-        this._directive = contentDirective(HtmlTemplateDirective);
+        return contentDirective(HtmlTemplateDirective);
     }
-    private _displayName = "Template";
-    displayName(name: string) { this._displayName = name; return this; }
-    private _directive: (parent: M, parentView: V) => RenderResult;
+    private get directive() {
+        if (this._directive === undefined)
+            this._directive = this.createDirective();
+        return this._directive;
+    }
     renderUntracked(parent: M, parentView: V, evhContext: EventHandlerContext<M, V>): RenderResult {
         return html(this.strings, ...this.values.map(v => renderTemplateValue(parent, parentView, v, evhContext)));
     }
     render(parent: M, parentView?: V): RenderResult {
-        return html`${this._directive(parent, parentView!)}`;
+        return this.directive(parent, parentView!);
     }
 }
 
@@ -77,7 +86,8 @@ type NoBind = Template<any, any> | Binding<any, any, any> | ModelArrayBinding<an
 
 export type Bindable<M, V, T> = T extends NoBind ? unknown : (T | Binding<M, V, T>);
 
-export type TemplateValue<M, V = any, T = any> = Primitive | RenderResult | Model | Template<M, V> | Binding<M, V, T> | ModelArrayBinding<M, V, any> | EventHandler<M, V>;
+export type TemplateContent<M, V = any, T = any> = Primitive | RenderResult | Model | Template<M, V> | Binding<M, V, T> | ModelArrayBinding<M, V, any>;
+export type TemplateValue<M, V = any, T = any> = TemplateContent<M, V, T> | EventHandler<M, V>;
 
 export class ArrayItem<M, Item> {
     constructor(readonly parent: M, readonly value: Item) { }
@@ -140,7 +150,7 @@ function makeRepeatDirective<M, V, Item, ItemParentView>() {
             return !arrayEquals(this._args!, args);
         }
         _renderItem(item: Item) {
-            return html`${renderItem(item, this._args as any)}`;
+            return renderItem(item, this._args as any);
         }
         renderUntracked() {
             const args = this._args!;
@@ -152,7 +162,7 @@ function makeRepeatDirective<M, V, Item, ItemParentView>() {
     }
 
     const directive = contentDirective(ReactiveRepeatDirective);
-    return (parent: M, parentView: V, itemParentView: ItemParentView, template: RepeatedTemplate<M, V, Item, ItemParentView>) => html`${directive(parent, parentView, itemParentView, template)}`;
+    return directive;//(parent: M, parentView: V, itemParentView: ItemParentView, template: RepeatedTemplate<M, V, Item, ItemParentView>) => html`${directive(parent, parentView, itemParentView, template)}`;
 }
 const renderRepeatedTemplate: <M, V, Item, ItemParentView>(parent: M, parentView: V, itemParentView: ItemParentView, binding: RepeatedTemplate<M, V, Item, ItemParentView>) => RenderResult = makeRepeatDirective();
 
@@ -183,8 +193,8 @@ function makeModelArrayDirective<M, V, Item extends Model>() {
         get displayName() { return "Array"; }
     }
 
-    const directive = contentDirective(ModelArrayDirective);
-    return (parent: M, parentView: V, binding: ModelArrayBinding<M, V, Item>) => html`${directive(parent, parentView, binding)}`;
+    return contentDirective(ModelArrayDirective);
+    //return (parent: M, parentView: V, binding: ModelArrayBinding<M, V, Item>) => html`${directive(parent, parentView, binding)}`;
 }
 const renderModelArray: <M, V, Item extends Model>(parent: M, parentView: V, binding: ModelArrayBinding<M, V, Item>) => RenderResult = makeModelArrayDirective();
 
@@ -201,7 +211,7 @@ function getOrCreateHandler<M, V>(evhContext: EventHandlerContext<M, V>, eh: Eve
     return handler;
 }
 
-export function renderTemplateValue<M, V, T = any>(m: M, v: V, t: TemplateValue<M, V, T>, evhContext: EventHandlerContext<M, V>): Primitive | ((e: Event) => void) | RenderResult {
+export function renderTemplateContent<M, V, T = any>(m: M, v: V, t: TemplateValue<M, V, T>): Primitive | RenderResult {
     let o: unknown = t;
     if (t instanceof HtmlTemplate || t instanceof ComponentTemplate)
         o = t.render(m, v);
@@ -209,14 +219,18 @@ export function renderTemplateValue<M, V, T = any>(m: M, v: V, t: TemplateValue<
         o = t.expression(m, v);
     else if (t instanceof ModelArrayBinding)
         return renderModelArray(m, v, t);
-    else if (t instanceof EventHandler)
-        return getOrCreateHandler(evhContext, t);
     const r = (o as any).render;
     if (typeof r === "function")
         o = r.call(o);
     if ((typeof o === "object" && o !== null && !("values" in o)) || typeof o === "function" || typeof o === "symbol")
         throw new Error("Encountered an unrenderable value")
     return o as any;
+}
+
+export function renderTemplateValue<M, V, T = any>(m: M, v: V, t: TemplateValue<M, V, T>, evhContext: EventHandlerContext<M, V>): Primitive | ((e: Event) => void) | RenderResult {
+    if (t instanceof EventHandler)
+        return getOrCreateHandler(evhContext, t);
+    return renderTemplateContent(m, v, t);
 }
 
 export function bind<M, V, T>(expression?: (m: M, v: V) => T): T extends NoBind ? unknown : Binding<M, V, T> { return new Binding(expression ?? identity as any) as any; }
@@ -275,8 +289,33 @@ export function makeReactiveLithComponent<Props, M = any, V = any>(cls: Reactive
         renderUntracked(): RenderResult {
             return this._comp!.render();
         }
+        disconnected(): void {
+            super.disconnected();
+            console.log(this.displayName, "disconnected");
+        }
     }
     const dir = contentDirective(LithCompDirective);
-    return (m: M, v: V, p: Props) => html`${dir(m, v, p)}`;
+    return (m: M, v: V, p: Props) => dir(m, v, p);
 }
 
+export interface IfProps<M, V> {
+    condition: (m: M, v: V) => boolean;
+    content: TemplateContent<M, V>;
+    altContent?: TemplateContent<M, V>;
+}
+class If_<M, V> implements ReactiveLithComponent<M, V, IfProps<M, V>> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: IfProps<M, V>) { }
+
+    render(): RenderResult {
+        const condition = this.props.condition(this.parent, this.parentView);
+        if (condition)
+            return renderTemplateContent(this.parent, this.parentView, this.props.content);
+        if (this.props.altContent)
+            return renderTemplateContent(this.parent, this.parentView, this.props.altContent);
+        return null;
+    }
+}
+const ifComp = makeReactiveLithComponent(If_);
+export function If<M, V>(props: IfProps<M, V>): ComponentTemplate<M, V, IfProps<M, V>> { 
+    return new ComponentTemplate(props, ifComp);
+}

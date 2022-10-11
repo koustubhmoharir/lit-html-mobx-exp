@@ -5,7 +5,7 @@ interface InputProps<M, V> extends ComponentProps<M, V> {
     value: Bindable<M, V, string>;
     onChange: (value: string, m: M, v: V) => void;
 }
-class Input<M, V> implements ReactiveLithComponent<M, V, InputProps<M, V>> {
+class Input_<M, V> implements ReactiveLithComponent<M, V, InputProps<M, V>> {
     constructor(readonly parent: M, readonly parentView: V, readonly props: InputProps<M, V>) { }
 
     handleEvent(event: InputEvent) {
@@ -20,8 +20,8 @@ class Input<M, V> implements ReactiveLithComponent<M, V, InputProps<M, V>> {
     }
 }
 
-const inputComp = makeReactiveLithComponent(Input);
+const inputComp = makeReactiveLithComponent(Input_);
 
-export function input<M, V>(props: InputProps<M, V>): ComponentTemplate<M, V, InputProps<M, V>> {
+export function Input<M, V>(props: InputProps<M, V>): ComponentTemplate<M, V, InputProps<M, V>> {
     return new ComponentTemplate(props, inputComp);
 }

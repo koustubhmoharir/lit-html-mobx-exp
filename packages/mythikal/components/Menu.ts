@@ -1,16 +1,16 @@
 import { createPopper, Instance as Popper } from '@popperjs/core';
 import { nothing } from 'lit-html';
 import { createRef, RefOrCallback } from 'lit-html/directives/ref.js';
-import { ComponentTemplate, html, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateValue, RepeatedTemplate, TemplateValue, unbind } from 'realithy';
+import { ComponentTemplate, html, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, TemplateContent, unbind } from 'realithy';
 import { ComponentProps } from './Component';
 import styles from "./Menu.module.scss";
 
 interface MenuProps<M, V, T = any> extends ComponentProps<M, V> {
-    content: TemplateValue<M, Menu<M, V>>;
-    items: ReadonlyArray<ComponentTemplate<M, Menu<M, V>, any>> | RepeatedTemplate<M, V, T, Menu<M, V>>;
+    content: TemplateContent<M, Menu_<M, V>>;
+    items: ReadonlyArray<ComponentTemplate<M, Menu_<M, V>, any>> | RepeatedTemplate<M, V, T, Menu_<M, V>>;
 }
 
-class Menu<M, V> implements ReactiveLithComponent<M, V, MenuProps<M, V>> {
+class Menu_<M, V> implements ReactiveLithComponent<M, V, MenuProps<M, V>> {
     constructor(readonly parent: M, readonly parentView: V, readonly props: MenuProps<M, V>) {
         makeObservable(this);
     }
@@ -32,7 +32,7 @@ class Menu<M, V> implements ReactiveLithComponent<M, V, MenuProps<M, V>> {
         // TODO: setup root ref
         const props = this.props;
         return html`
-            ${renderTemplateValue(this.parent, this, props.content, undefined as any)}
+            ${renderTemplateContent(this.parent, this, props.content)}
             ${this._isOpen ? html`
             <div ${ref(this._itemsContRef)} class=${styles.itemsContainer}>
                 <ul>
@@ -64,16 +64,16 @@ class Menu<M, V> implements ReactiveLithComponent<M, V, MenuProps<M, V>> {
         }
     }
 }
-const menuComp = makeReactiveLithComponent(Menu);
-export function menu<M, V, T>(props: MenuProps<M, V, T>): ComponentTemplate<M, V, MenuProps<M, V, T>> {
+const menuComp = makeReactiveLithComponent(Menu_);
+export function Menu<M, V, T>(props: MenuProps<M, V, T>): ComponentTemplate<M, V, MenuProps<M, V, T>> {
     return new ComponentTemplate(props, menuComp);
 }
 
 interface MenuItemProps<M, V> extends ComponentProps<M, V> {
     onClick: (m: M, v: V) => void;
-    content: TemplateValue<M, V>
+    content: TemplateContent<M, V>
 }
-class MenuItem<M, V extends Menu<any, any>> {
+class MenuItem_<M, V extends Menu_<any, any>> {
     constructor(readonly parent: M, readonly parentView: V, readonly props: MenuItemProps<M, V>) {
     }
 
@@ -87,12 +87,12 @@ class MenuItem<M, V extends Menu<any, any>> {
         const root = unbind(this.parent, this.parentView, props.root);
         return html`
             <li ${ref(root)} @click=${this}>
-                ${renderTemplateValue(this.parent, this.parentView, props.content, this)}
+                ${renderTemplateContent(this.parent, this.parentView, props.content)}
             </li>
         `;
     }
 }
-const menuItemComp = makeReactiveLithComponent(MenuItem);
-export function menuItem<M, V extends Menu<any, any>>(props: MenuItemProps<M, V>): ComponentTemplate<M, V, MenuItemProps<M, V>> {
+const menuItemComp = makeReactiveLithComponent(MenuItem_);
+export function MenuItem<M, V extends Menu_<any, any>>(props: MenuItemProps<M, V>): ComponentTemplate<M, V, MenuItemProps<M, V>> {
     return new ComponentTemplate(props, menuItemComp);
 }

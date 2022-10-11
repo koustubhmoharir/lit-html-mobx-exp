@@ -1,5 +1,5 @@
-export { button } from "./components/Button";
-export { input } from "./components/Input";
-export { menu, menuItem } from "./components/Menu";
+export { Button } from "./components/Button";
+export { Input } from "./components/Input";
+export { Menu, MenuItem } from "./components/Menu";
 
 import "./components/Styles.scss";

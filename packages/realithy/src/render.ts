@@ -2,8 +2,10 @@ import { render as renderLith } from "lit-html";
 export { isTemplateResult } from "lit-html/directive-helpers.js"
 import { configure } from "mobx"
 
+export type Primitive = string | number | boolean | bigint;
+
 interface TemplateOrDirectiveResult { values: unknown[]; }
-export type RenderResult = TemplateOrDirectiveResult | null;
+export type RenderResult = TemplateOrDirectiveResult | Primitive | null;
 
 configure({
     enforceActions: "never",

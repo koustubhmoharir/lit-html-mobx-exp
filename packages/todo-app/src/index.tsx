@@ -1,7 +1,7 @@
 /** @jsxImportSource realithy */
-import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent } from "realithy";
+import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, If } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { input, button, menu, menuItem } from "mythikal";
+import { Input, Button, Menu, MenuItem } from "mythikal";
 
 interface DropItemData { itemId: number; }
 const onDropItem = Symbol();
@@ -49,7 +49,7 @@ class Item {
             @drop=${handleEvent((e, m) => m.drop(e as DragEvent))}>
             ${bind(m => m.id)} - ${bind(m => m.text)}
         </div>
-    `;
+    `.displayName("Item");
 
     render(): RenderResult {
         return Item.template.render(this);
@@ -93,11 +93,11 @@ class List implements Model {
 
     static template = template<List>`
         <div style="display: flex; flex-direction: column">
-            ${input({value: bind(m => m.newItemText), onChange: (value, m) => m.newItemText = value })}
-            ${button({onClick: m => m.addNewItem(), label: "Add"})}
+            ${Input({value: bind(m => m.newItemText), onChange: (value, m) => m.newItemText = value })}
+            ${Button({onClick: m => m.addNewItem(), label: "Add"})}
             ${bindArray(m => m.items)}
         </div>
-    `;
+    `.displayName("List");
 
     render(): RenderResult {
         return List.template.render(this);
@@ -121,11 +121,15 @@ class Test {
     step = 1;
 
     @observable
+    showButton = true;
+
+    @observable
     options = observable.array([] as string[]);
 
     @observable
     selectedOption = "";
 
+    @action
     increment() {
         this.counter += this.step;
         const i = Math.round(Math.random() * this.options.length + 2);
@@ -142,23 +146,27 @@ class Test {
             <span>Click count is:</span>
             <span>${bind(m => m.counter)}</span>
             <br>
-            ${button({ onClick: m => m.increment(), label: "Increment" })}
+            ${Button({ onClick: m => m.showButton = !m.showButton, label: bind(m => m.showButton ? "Hide Increment" : "Show Increment") })}
+            ${If({
+                condition: m => m.showButton,
+                content: Button({ onClick: m => m.increment(), label: "Increment" })
+            })}
             <br>
             <span>Increment by: </span>
-            ${menu({
-                content: button({ label: bind(m => String(m.step)), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
+            ${Menu({
+                content: Button({ label: bind(m => String(m.step)), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
                 items: [1, 2, 3].map(i =>
-                    menuItem({ content: String(i), onClick: m => m.step = i })
+                    MenuItem({ content: String(i), onClick: m => m.step = i })
                 )
             })}
             <br>
             <span>Random options (generated on each increment): </span>
-            ${menu<Test, any, string>({
-                content: button({ label: bind(m => m.selectedOption || "(None)"), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
-                items: repeat(m => m.options, menuItem({ content: bind(item => item.value), onClick: item => item.parent.selectedOption = item.value }))
+            ${Menu<Test, any, string>({
+                content: Button({ label: bind(m => m.selectedOption || "(None)"), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
+                items: repeat(m => m.options, MenuItem({ content: bind(item => item.value), onClick: item => item.parent.selectedOption = item.value }))
             })}
         </div>
-    `;
+    `.displayName("Test");
 
     render() {
         return Test.template.render(this);
