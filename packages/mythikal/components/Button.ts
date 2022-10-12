@@ -27,7 +27,7 @@ class Button_<M, V> implements ReactiveLithComponent<M, V, ButtonProps<M, V>> {
         const root = unbind(parent, parentView, props.root);
         return html`
         <button ${ref(root)} @click=${this}>
-            ${content === undefined ? label : renderTemplateContent(parent, parentView, content, this)}
+            ${content === undefined ? label : renderTemplateContent(parent, parentView, content)}
         </button>`;
     }
 }

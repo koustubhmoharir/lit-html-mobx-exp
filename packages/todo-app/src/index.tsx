@@ -28,6 +28,7 @@ class Item {
         DropItem.dispatch(this, { itemId: id });
     }
 
+    @action
     dragStart(e: DragEvent) {
         console.log(`Drag start: ${this.id}`);
         if (!e.dataTransfer) return;
@@ -35,6 +36,7 @@ class Item {
         e.dataTransfer.setData("text", String(this.id));
     }
 
+    @action
     drop(e: DragEvent) {
         e.preventDefault();
         const idStr = e.dataTransfer?.getData("text");
@@ -146,7 +148,10 @@ class Test {
             <span>Click count is:</span>
             <span>${bind(m => m.counter)}</span>
             <br>
-            ${Button({ onClick: m => m.showButton = !m.showButton, label: bind(m => m.showButton ? "Hide Increment" : "Show Increment") })}
+            ${Button({
+                onClick: m => m.showButton = !m.showButton,
+                label: bind(m => m.showButton ? "Hide Increment" : "Show Increment")
+            })}
             ${If({
                 condition: m => m.showButton,
                 content: Button({ onClick: m => m.increment(), label: "Increment" })
@@ -155,7 +160,7 @@ class Test {
             <span>Increment by: </span>
             ${Menu({
                 content: Button({ label: bind(m => String(m.step)), onClick: (_, v) => v.toggle(), root: bind((_, v) => v.contentRef) }),
-                items: [1, 2, 3].map(i =>
+                items: [1, 2, 3].map(i => 
                     MenuItem({ content: String(i), onClick: m => m.step = i })
                 )
             })}
