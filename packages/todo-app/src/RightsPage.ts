@@ -82,63 +82,50 @@ export function RightItems<M extends RightsPage_, V>(props: RightItemsProps<M, V
     return new ComponentTemplate(props, rightItemsComp);
 }
 
-interface RightsListProps<M, V> extends ComponentProps<M, V> {
+interface KeyColumnLevelRights {
+    name: string;
+    items: Right[];
 }
 
-class RightsList_<M extends RightsPage_, V> implements ReactiveLithComponent<M, V, RightsListProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: RightsListProps<M, V>) {
-        //makeObservable(this);
+interface ITableLevelRights {
+    name: string;
+    items: KeyColumnLevelRights[] | Right[];
+}
+
+class TableLevelRights {
+    constructor(readonly name: string, items: KeyColumnLevelRights[] | Right[]) {
+
     }
 
+    static template = template<TableLevelRights>`
+        <div>
+            ${bind(m => m.name)}
+        </div>
+    `
+
     render() {
-        return html`
-            ${
-                html`<div>obsolete</div>`
-                // _.map(this.parent.rightsByTableColumn, (tr, tn) => {
-                //     const name = tn == "." ? "Miscellaneous" : tn;
-                //     if (tr.searchResultCount === 0) return null;
-                //     return (
-                //         html`
-                //             ${Parent({
-                //                 header: name,
-                //                 headerKey: name,
-                //                 children: _.map(tr.byColumn, (cr, cn) => {
-                //                     if (cr.searchResults?.length === 0) return Parent({
-                //                         header: "nothing",
-                //                         headerKey: "nothing",
-                //                         children: [Button({label: "Nothing", onClick: () => {}})]
-                //                     });
-                //                     const columnName = cn ? ("By " + cn) : "All";
-                //                     if (tn == ".") return RightItems({
-                //                         rights: cr.searchResults!
-                //                     });
-                //                     return (
-                //                         Parent({
-                //                             header: columnName,
-                //                             headerKey: columnName,
-                //                             children: [RightItems({
-                //                                 rights: cr.searchResults!
-                //                             })]
-                //                         })
-                //                     )
-                //                 })
-                //             }).render(this, this)}
-                //         `
-                //     )
-                // })
-            }
-        `;
-    };
-}
-
-const rightsListComp = makeReactiveLithComponent(RightsList_);
-
-export function RightsList<M extends RightsPage_, V>(props: RightsListProps<M, V>): ComponentTemplate<M, V, RightsListProps<M, V>> {
-    return new ComponentTemplate(props, rightsListComp);
+        return TableLevelRights.template.render(this);
+    }
 }
 
 class RightsNavigation {
     constructor(rights: Right[]) {
+
+        this.tableLevelRights = _.entries(_.groupBy(rights, r => r.SchemaName + "." + r.TableName)).map(e => {
+            if (e[0] === ".") return new TableLevelRights("Miscellaneous", e[1]);
+            return new TableLevelRights(e[0], _.entries(_.groupBy(e[1], r => r.KeyColumnName)).map(e => {
+                    return {
+                        name: e[0] === "" ? "All" : `By ${e[0]}`,
+                        items: e[1]
+                    }
+                }))
+            })
+        console.log(this.tableLevelRights);
+
+        makeObservable(this);
+
+        _.groupBy(rights, r => r.SchemaName + "." + r.TableName)
+
         this._rightsByTableColumn = _.mapValues(
             _.groupBy(rights, r => r.SchemaName + "." + r.TableName),
             (tr, _tn): TableRights => {
@@ -168,6 +155,8 @@ class RightsNavigation {
         return r.Name.toLowerCase().includes(this.searchTextLower) || r.Description.toLowerCase().includes(this.searchTextLower);
     }
 
+    tableLevelRights: TableLevelRights[];
+
     @observable
     searchTextLower = "";
 
@@ -175,10 +164,10 @@ class RightsNavigation {
     private _rightsByTableColumn: _.Dictionary<TableRights> = {};
     get rightsByTableColumn() { return this._rightsByTableColumn; }
 
-    static template = template<RightsNavigation>`
+    static template1 = template<RightsNavigation>`
         ${
             bind(m => _.map(m.rightsByTableColumn, (tr, tn) => {
-                const name = tn == "." ? "Miscellaneous" : tn;
+                const name: string = tn == "." ? "Miscellaneous" : tn;
                 if (tr.searchResultCount === 0) return null;
                 return (
                     html`
@@ -212,6 +201,12 @@ class RightsNavigation {
         }
     `;
 
+    static template = template<RightsNavigation>`
+        ${
+            bind(m => m.tableLevelRights.map(r => r.render()))
+        }
+    `
+
     render() {
         return RightsNavigation.template.render(this);
     }
@@ -220,14 +215,14 @@ class RightsNavigation {
 class CentralContent {
 }
 
-class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> { // TODO: make state tree
+class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
     constructor(readonly parent: undefined, readonly parentView: undefined, readonly props: {}) {
         makeObservable(this);
         this.refresh();
     }
 
     @observable.ref
-    rightsNavigation?: RightsNavigation;
+    rightsNavigation = new RightsNavigation([]); // TODO: leaving it uninitialized gives mobx exception
 
     readonly centralContent = new CentralContent();
 
@@ -253,7 +248,7 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> { /
                     ${SearchBox({})}
                     <div style="overflow: auto;">
                         ${html``/*RightsList({})*/}
-                        ${bind(m => m.rightsNavigation?.render())}
+                        ${bind(m => m.rightsNavigation == undefined ? nothing : m.rightsNavigation.render())}
                     </div>
                 </div>
                 <div>Right panel or null</div>
