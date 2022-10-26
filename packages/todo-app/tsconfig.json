@@ -2,7 +2,15 @@
     "extends": "../../tsconfig_base.json",
     "compilerOptions": {
         "noEmit": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "plugins": [
+            {
+                "name": "typescript-plugin-css-modules",
+                "options": {
+                    "classnameTransform": "camelCaseOnly"
+                }
+            }
+        ],
     },
     "include": ["src"],
     "references": [

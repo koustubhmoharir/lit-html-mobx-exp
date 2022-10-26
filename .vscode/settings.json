@@ -11,5 +11,11 @@
         "html",
         "raw",
         "template"
-    ]
+    ],
+    "lit-plugin.htmlTemplateTags": [
+        "html",
+        "raw",
+        "template"
+    ],
+    "lit-plugin.disable": false
 }

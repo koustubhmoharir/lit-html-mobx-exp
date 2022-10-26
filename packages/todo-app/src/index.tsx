@@ -1,7 +1,8 @@
 /** @jsxImportSource realithy */
-import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, If } from "realithy";
+import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, If, renderTemplateContent } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { Input, Button, Menu, MenuItem } from "mythikal";
+import { rightsPageComp } from "./RightsPage";
 
 interface DropItemData { itemId: number; }
 const onDropItem = Symbol();
@@ -180,7 +181,7 @@ class Test {
 
 class PageState implements Handler<typeof DropItem> {
     constructor(readonly parent: undefined, readonly parentView: undefined, readonly props: undefined) {
-        //makeObservable(this);
+        makeObservable(this);
     }
 
     readonly list1 = new List(this, 1);
@@ -205,16 +206,25 @@ class PageState implements Handler<typeof DropItem> {
         }
     }
 
+    @observable
+    showRights = true;
 
     render() {
         return html`
-        <div style="display: flex; flex-direction: column">
-            ${this.test.render()}
-            <div style="display: flex; flex-direction: row">
-                ${this.list1.render()}
-                ${this.list2.render()}
+        ${this.showRights ?
+            rightsPageComp(undefined, undefined, {}) :
+            html`
+            <div style="display: flex; flex-direction: column">
+                ${this.test.render()}
+                <div style="display: flex; flex-direction: row">
+                    ${this.list1.render()}
+                    ${this.list2.render()}
+                </div>
             </div>
-        </div>`
+            <button @click=${() => this.showRights = true}>Go to Rights Page</button>
+            `
+        }
+        `
     }
 }
 

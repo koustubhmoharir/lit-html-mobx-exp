@@ -26,6 +26,24 @@ module.exports = {
                         cacheDirectory: true
                     }
                 }
+            },
+            {
+                test: /\.(c|sa|sc)ss$/i,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            modules: {
+                                auto: true,
+                                exportLocalsConvention: 'camelCaseOnly',
+                                localIdentName: '[path][name]__[local]--[hash:base64:5]'
+                            },
+                            importLoaders: 1
+                        }
+                    },
+                    'sass-loader'
+                ]
             }
         ]
     },

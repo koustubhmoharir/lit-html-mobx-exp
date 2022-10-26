@@ -1,0 +1,30 @@
+.main-table {
+    margin-top: 1rem;
+}
+
+.toolbar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.panel {
+    display: flex;
+    align-content: flex-start;
+}
+
+.panel.horizontal {
+    flex-direction: row;
+}
+
+.panel.vertical {
+    flex-direction: column;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+}
