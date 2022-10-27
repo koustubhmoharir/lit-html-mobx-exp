@@ -1,26 +1,22 @@
-import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, If, ComponentTemplate, ReactiveLithComponent } from "realithy";
+import { html, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, ComponentTemplate, ReactiveLithComponent, Bindable, TemplateContent, HtmlTemplate, unbind, renderTemplateContent } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { Input, Button, Menu, MenuItem } from "mythikal";
-import { Toolbar } from "./Toolbar";
-import { Panel } from "./Panel";
+import { Button } from "mythikal";
 import { ComponentProps } from "mythikal/components/Component";
 import styles from "./RightsPage.module.scss";
 import { SearchBox } from "./SearchBox";
 import { getRights } from "./session";
 import * as _ from "lodash";
-import { KeyColumnRights, Right, TableRights } from "./AppModel";
+import { Right } from "./AppModel";
 import { ExpandLess, ExpandMore } from "./icons";
 import { IconButton } from "./IconButton";
-import { nothing } from "lit-html";
 
-interface ParentProps<M, V> extends ComponentProps<M, V> {
-    header: string;
-    headerKey: string;
-    children: ComponentTemplate<any, any, any>[];
+interface ExpanderProps<M, V> extends ComponentProps<M, V> {
+    header: Bindable<M, V, string>;
+    content: TemplateContent<M, V>;
 }
 
-class Parent_<M, V> implements ReactiveLithComponent<M, V, ParentProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: ParentProps<M, V>) {
+class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: ExpanderProps<M, V>) {
         makeObservable(this);
     }
 
@@ -28,6 +24,11 @@ class Parent_<M, V> implements ReactiveLithComponent<M, V, ParentProps<M, V>> {
     expanded = false;
 
     render() {
+        const parent = this.parent;
+        const parentView = this.parentView;
+        const props = this.props;
+        const content = props.content;
+        const header = unbind(parent, parentView, props.header);
         return html`
             <div class="${styles.panel} ${styles.horizontal}" style="fill: grey;">
                 ${IconButton({
@@ -35,180 +36,92 @@ class Parent_<M, V> implements ReactiveLithComponent<M, V, ParentProps<M, V>> {
                     onClick: () => this.expanded = !this.expanded
                 }).render(this, this)}
                 <div style="padding-top: 0.313rem;">
-                    <span style="font-size: 0.875rem; font-weight: 500; text-decoration: ${this.expanded ? "underline" : "none"};">${this.props.header}</span>
+                    <span style="font-size: 0.875rem; font-weight: 500; text-decoration: ${this.expanded ? "underline" : "none"};">${header}</span>
                 </div>
             </div>
             <div style="padding: 0 0 0 2rem; display: ${this.expanded ? "block" : "none"}; transition: max-height 2s;">
                 <div style="flex-grow: 1;">
-                    ${this.props.children?.map(c => c.render(this, this))}
+                    ${renderTemplateContent(parent, parentView, content)}
                 </div>
             </div>
         `;
     };
 }
 
-const parentComp = makeReactiveLithComponent(Parent_);
+const expanderComp = makeReactiveLithComponent(Expander_);
 
-export function Parent<M, V>(props: ParentProps<M, V>): ComponentTemplate<M, V, ParentProps<M, V>> {
-    return new ComponentTemplate(props, parentComp);
+export function Expander<M, V>(props: ExpanderProps<M, V>): ComponentTemplate<M, V, ExpanderProps<M, V>> {
+    return new ComponentTemplate(props, expanderComp);
 }
 
-interface RightItemsProps<M, V> extends ComponentProps<M, V> {
-    rights: Right[];
-}
-
-class RightItems_<M extends RightsPage_, V> implements ReactiveLithComponent<M, V, RightItemsProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: RightItemsProps<M, V>) {
-        //makeObservable(this);
+class RightItem { // NOTE: This is okay. Since this is leaf of state tree.
+    constructor(readonly parent: TableLevelRights | KeyColumnLevelRights, readonly right: Right) {
+        
     }
 
-    render() {
-        return html`
-            ${
-                this.props.rights.map(r => html`
-                    <div style="cursor: pointer;" @click=${() => alert("hi")}>
-                        <span>${r.Name}</span>
-                        <p style="font-size: 0.875rem; color: grey">${r.Description}</p>
-                    </div>
-                `)
-            }
-        `;
-    };
-}
-
-const rightItemsComp = makeReactiveLithComponent(RightItems_);
-
-export function RightItems<M extends RightsPage_, V>(props: RightItemsProps<M, V>): ComponentTemplate<M, V, RightItemsProps<M, V>> {
-    return new ComponentTemplate(props, rightItemsComp);
-}
-
-interface KeyColumnLevelRights {
-    name: string;
-    items: Right[];
-}
-
-interface ITableLevelRights {
-    name: string;
-    items: KeyColumnLevelRights[] | Right[];
-}
-
-class TableLevelRights {
-    constructor(readonly name: string, items: KeyColumnLevelRights[] | Right[]) {
-
-    }
-
-    static template = template<TableLevelRights>`
-        <div>
-            ${bind(m => m.name)}
+    static template = template<RightItem>`
+        <div style="cursor: pointer;" @click=${handleEvent(() => alert("hi"))}>
+            <span>${bind(m => m.right.Name)}</span>
+            <p style="font-size: 0.875rem; color: grey">${bind(m => m.right.Description)}</p>
         </div>
     `
 
     render() {
-        return TableLevelRights.template.render(this);
+        return RightItem.template.render(this);
+    };
+}
+
+class KeyColumnLevelRights {
+    constructor(readonly parent: TableLevelRights, name: string, rights: Right[]) {
+        this.displayName = (name === "") ? "All" : `By ${name}`;
+        this.items = rights.map(r => new RightItem(this, r));
+    }
+
+    readonly displayName: string;
+
+    readonly items: RightItem[];
+
+    static template = template<KeyColumnLevelRights>`
+        ${Expander({
+            header: bind(m => m.displayName),
+            content: template`<div>${bindArray(m => m.items)}</div>`
+        })}
+    `
+
+    // TODO: Try to remove explicit type definition (introduced due to bindArray)
+    render(): RenderResult {
+        return KeyColumnLevelRights.template.render(this);
     }
 }
 
-class RightsNavigation {
-    constructor(rights: Right[]) {
-
-        this.tableLevelRights = _.entries(_.groupBy(rights, r => r.SchemaName + "." + r.TableName)).map(e => {
-            if (e[0] === ".") return new TableLevelRights("Miscellaneous", e[1]);
-            return new TableLevelRights(e[0], _.entries(_.groupBy(e[1], r => r.KeyColumnName)).map(e => {
-                    return {
-                        name: e[0] === "" ? "All" : `By ${e[0]}`,
-                        items: e[1]
-                    }
-                }))
-            })
-        console.log(this.tableLevelRights);
-
-        makeObservable(this);
-
-        _.groupBy(rights, r => r.SchemaName + "." + r.TableName)
-
-        this._rightsByTableColumn = _.mapValues(
-            _.groupBy(rights, r => r.SchemaName + "." + r.TableName),
-            (tr, _tn): TableRights => {
-                let searchCount = 0;
-                return observable.object({
-                    byColumn: _.mapValues(
-                        _.groupBy(tr, r => r.KeyColumnName),
-                        (cr, _cn): KeyColumnRights => {
-                            const searchResults = this.searchTextLower ? cr.filter(this.matchRight) : cr;
-                            searchCount += searchResults.length;
-                            return observable.object({
-                                rights: cr,
-                                isExpanded: false,
-                                isSearchExpanded: false,
-                                searchResults: searchResults
-                            }, {}, { deep: false })
-                        }
-                    ),
-                    isExpanded: false,
-                    isSearchExpanded: false,
-                    searchResultCount: this.searchTextLower ? searchCount : undefined
-                }, {}, {deep: false});
-            });
+class TableLevelRights { // NOTE: Ancestors can be accessed via events (see index for example).
+    // NOTE: Try to keep constructors light, with minimal logic.
+    // NOTE: Each child class should take readonly constructor argument for parent.
+    constructor(readonly parent: RightsPage_, name: string, rights: Right[]) {
+        const hasKeyColumns = this.hasKeyColumns = name !== ".";
+        this.displayName = hasKeyColumns ? name : "Miscellaneous";
+        this.items = hasKeyColumns ?
+            _.entries(_.groupBy(rights, r => r.KeyColumnName)).map(e => new KeyColumnLevelRights(this, e[0], e[1])) :
+            rights.map(r => new RightItem(this, r));
     }
 
-    matchRight = (r: Right) => {
-        return r.Name.toLowerCase().includes(this.searchTextLower) || r.Description.toLowerCase().includes(this.searchTextLower);
-    }
+    readonly hasKeyColumns: boolean;
 
-    tableLevelRights: TableLevelRights[];
+    readonly displayName: string;
 
-    @observable
-    searchTextLower = "";
+    readonly items: KeyColumnLevelRights[] | RightItem[];
 
-    @observable.ref
-    private _rightsByTableColumn: _.Dictionary<TableRights> = {};
-    get rightsByTableColumn() { return this._rightsByTableColumn; }
-
-    static template1 = template<RightsNavigation>`
-        ${
-            bind(m => _.map(m.rightsByTableColumn, (tr, tn) => {
-                const name: string = tn == "." ? "Miscellaneous" : tn;
-                if (tr.searchResultCount === 0) return null;
-                return (
-                    html`
-                        ${Parent({
-                            header: name,
-                            headerKey: name,
-                            children: _.map(tr.byColumn, (cr, cn) => {
-                                if (cr.searchResults?.length === 0) return Parent({
-                                    header: "nothing",
-                                    headerKey: "nothing",
-                                    children: [Button({label: "Nothing", onClick: () => {}})]
-                                });
-                                const columnName = cn ? ("By " + cn) : "All";
-                                if (tn == ".") return RightItems({
-                                    rights: cr.searchResults!
-                                });
-                                return (
-                                    Parent({
-                                        header: columnName,
-                                        headerKey: columnName,
-                                        children: [RightItems({
-                                            rights: cr.searchResults!
-                                        })]
-                                    })
-                                )
-                            })
-                        }).render(this, this)}
-                    `
-                )
-            }))
-        }
-    `;
-
-    static template = template<RightsNavigation>`
-        ${
-            bind(m => m.tableLevelRights.map(r => r.render()))
-        }
+    static template = template<TableLevelRights>`
+        ${Expander({
+            header: bind(m => m.displayName),
+            // TODO: bindArray does not seem to handle union types
+            // NOTE: the template wrapper is good to have for UI cleanliness
+            content: template`<div>${bindArray(m => m.items as any[])}</div>`
+        })}
     `
-
+    
     render() {
-        return RightsNavigation.template.render(this);
+        return TableLevelRights.template.render(this);
     }
 }
 
@@ -221,19 +134,26 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
         this.refresh();
     }
 
-    @observable.ref
-    rightsNavigation = new RightsNavigation([]); // TODO: leaving it uninitialized gives mobx exception
-
     readonly centralContent = new CentralContent();
 
     refresh() {
         getRights().then(result => {
             const rights = result.Items as unknown as Right[];
-            this.rightsNavigation = new RightsNavigation(rights);
+            this.tableLevelRights = _.entries(_.groupBy(rights, r => r.SchemaName + "." + r.TableName)).map(e => new TableLevelRights(this, e[0], e[1]))
         });
     }
 
-    static template = template<RightsPage_>`
+    matchRight = (r: Right) => {
+        return r.Name.toLowerCase().includes(this.searchTextLower) || r.Description.toLowerCase().includes(this.searchTextLower);
+    }
+
+    @observable.ref
+    tableLevelRights?: TableLevelRights[];
+
+    @observable
+    searchTextLower = "";
+
+    static template: HtmlTemplate<RightsPage_, any> = template<RightsPage_>`
         <div class="${styles.panel} ${styles.vertical}" style="height: 100%;">
             <div class=${styles.toolbar}>
                 <span>icon</span>
@@ -247,8 +167,9 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
                 <div class="${styles.panel} ${styles.vertical}" style="max-width: 250px; border-right: 1px solid lightgrey; padding: 0 0.5rem;">
                     ${SearchBox({})}
                     <div style="overflow: auto;">
-                        ${html``/*RightsList({})*/}
-                        ${bind(m => m.rightsNavigation == undefined ? nothing : m.rightsNavigation.render())}
+                        ${
+                            bindArray(m => m.tableLevelRights ?? []) // NOTE: avoid .map in UI
+                        }
                     </div>
                 </div>
                 <div>Right panel or null</div>
