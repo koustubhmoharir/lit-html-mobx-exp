@@ -1,4 +1,4 @@
-import { html, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, ComponentTemplate, ReactiveLithComponent, Bindable, TemplateContent, HtmlTemplate, unbind, renderTemplateContent } from "realithy";
+import { html, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, ComponentTemplate, ReactiveLithComponent, Bindable, TemplateContent, HtmlTemplate, unbind, renderTemplateContent, If, eventData, Model, EventArgs } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { Button } from "mythikal";
 import { ComponentProps } from "mythikal/components/Component";
@@ -9,6 +9,12 @@ import * as _ from "lodash";
 import { Right } from "./AppModel";
 import { ExpandLess, ExpandMore } from "./icons";
 import { IconButton } from "./IconButton";
+
+const onSelectRight = Symbol();
+const SelectRight = eventData<Right>().link(onSelectRight);
+
+const onSelectRefinedRight = Symbol();
+const SelectRefinedRight = eventData<{}>().link(onSelectRefinedRight);
 
 interface ExpanderProps<M, V> extends ComponentProps<M, V> {
     header: Bindable<M, V, string>;
@@ -59,8 +65,21 @@ class RightItem { // NOTE: This is okay. Since this is leaf of state tree.
         
     }
 
+    @action
+    selectRight() {
+        SelectRight.dispatch(this, this.right);
+    }
+
+    /* NOTE:
+    DOM events must be handled in the components relevant to them.
+    e.g. use our button here instead of div.
+    handleEvent should be used as last resort.
+    DOM Events handling in state classes is anti pattern.
+    Indicates something is missing in component library.
+    */
+   // TODO: Could have used button here but it introduces too many unwanted styles as of now
     static template = template<RightItem>`
-        <div style="cursor: pointer;" @click=${handleEvent(() => alert("hi"))}>
+        <div style="cursor: pointer;" @click=${handleEvent((_e, m) => m.selectRight())}>
             <span>${bind(m => m.right.Name)}</span>
             <p style="font-size: 0.875rem; color: grey">${bind(m => m.right.Description)}</p>
         </div>
@@ -88,7 +107,7 @@ class KeyColumnLevelRights {
         })}
     `
 
-    // TODO: Try to remove explicit type definition (introduced due to bindArray)
+    // NOTE: Explicit type definition is okay for now
     render(): RenderResult {
         return KeyColumnLevelRights.template.render(this);
     }
@@ -100,32 +119,94 @@ class TableLevelRights { // NOTE: Ancestors can be accessed via events (see inde
     constructor(readonly parent: RightsPage_, name: string, rights: Right[]) {
         const hasKeyColumns = this.hasKeyColumns = name !== ".";
         this.displayName = hasKeyColumns ? name : "Miscellaneous";
-        this.items = hasKeyColumns ?
-            _.entries(_.groupBy(rights, r => r.KeyColumnName)).map(e => new KeyColumnLevelRights(this, e[0], e[1])) :
-            rights.map(r => new RightItem(this, r));
+        if (hasKeyColumns)
+            this.keyColumnItems = _.entries(_.groupBy(rights, r => r.KeyColumnName)).map(e => new KeyColumnLevelRights(this, e[0], e[1]));
+        else
+            this.rightItems = rights.map(r => new RightItem(this, r));
     }
 
     readonly hasKeyColumns: boolean;
 
     readonly displayName: string;
 
-    readonly items: KeyColumnLevelRights[] | RightItem[];
+    // NOTE: This will be determined at runtime
+    readonly keyColumnItems?: KeyColumnLevelRights[];
+    readonly rightItems?: RightItem[];
 
     static template = template<TableLevelRights>`
         ${Expander({
             header: bind(m => m.displayName),
-            // TODO: bindArray does not seem to handle union types
+            // NOTE: bindArray does not seem to handle union types. However, the differenciation should be done at runtime.
             // NOTE: the template wrapper is good to have for UI cleanliness
-            content: template`<div>${bindArray(m => m.items as any[])}</div>`
+            content: template`<div>${If({
+                condition: m => m.hasKeyColumns,
+                content: bindArray(m => m.keyColumnItems!),
+                altContent: bindArray(m => m.rightItems!)
+            })}</div>`
         })}
     `
     
-    render() {
+    render(): RenderResult {
         return TableLevelRights.template.render(this);
     }
 }
 
-class CentralContent {
+class GrantRights {
+    constructor(readonly parent: RightsPage_) {
+        
+    }
+
+    static template = template<GrantRights>`
+    <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem;">
+        <h5>GrantRights Title</h5>
+        <div class="${styles.panel} ${styles.horizontal}">
+            ${SearchBox({})}
+            ${Button({
+                label: "Grant",
+                onClick: () => {}
+            })}
+            ${Button({
+                label: "Delete",
+                onClick: () => {}
+            })}
+            ${Button({
+                label: "Deny",
+                onClick: () => {}
+            })}
+        </div>
+        <div>
+            GrantRights Table
+        </div>
+    </div>
+`
+    
+    render(): RenderResult {
+        return GrantRights.template.render(this);
+    }
+}
+
+class RefineRights {
+    constructor(readonly parent: RightsPage_) {
+        
+    }
+
+    @action
+    selectRefinedRight() {
+        SelectRefinedRight.dispatch(this, {});
+    }
+
+    static template = template<RefineRights>`
+        <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem; border-right: 1px solid lightgrey;">
+            <h5>RefineRights Title</h5>
+            <div @click=${handleEvent((_e, m) => m.selectRefinedRight())}>
+                RefineRights Table
+            </div>
+        </div>
+    `
+    
+    render(): RenderResult {
+        return RefineRights.template.render(this);
+    }
 }
 
 class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
@@ -134,7 +215,30 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
         this.refresh();
     }
 
-    readonly centralContent = new CentralContent();
+    [onSelectRight](target: Model, e: EventArgs<Right>) {
+        if (target instanceof RightItem) {
+            if (e.data.KeyColumnName !== "") {
+                this.refineRights = new RefineRights(this);
+                this.grantRights = undefined;
+            }
+            else {
+                this.refineRights = undefined;
+                this.grantRights = new GrantRights(this);
+            }
+        }
+    }
+
+    [onSelectRefinedRight](target: Model, _e: EventArgs<{}>) {
+        if (target instanceof RefineRights) {
+            this.grantRights = new GrantRights(this);
+        }
+    }
+
+    @observable.ref
+    refineRights?: RefineRights = new RefineRights(this); // TODO: uninitialize
+
+    @observable.ref
+    grantRights?: GrantRights = new GrantRights(this); // TODO: uninitialize
 
     refresh() {
         getRights().then(result => {
@@ -172,7 +276,14 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
                         }
                     </div>
                 </div>
-                <div>Right panel or null</div>
+                ${If({
+                    condition: m => !!m.refineRights,
+                    content: bind(m => m.refineRights)
+                })}
+                ${If({
+                    condition: m => !!m.grantRights,
+                    content: bind(m => m.grantRights)
+                })}
             </div>
         </div>
     `;
