@@ -1,64 +1,19 @@
-import { html, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, ComponentTemplate, ReactiveLithComponent, Bindable, TemplateContent, HtmlTemplate, unbind, renderTemplateContent, If, eventData, Model, EventArgs } from "realithy";
+import { RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, ReactiveLithComponent, HtmlTemplate, If, eventData, Model, EventArgs, Bindable, TemplateContent, unbind, html, renderTemplateContent, ComponentTemplate } from "realithy";
 import { observable, makeObservable, action } from "mobx";
 import { Button } from "mythikal";
-import { ComponentProps } from "mythikal/components/Component";
 import styles from "./RightsPage.module.scss";
 import { SearchBox } from "./SearchBox";
 import { getRights } from "./session";
 import * as _ from "lodash";
 import { Right } from "./AppModel";
-import { ExpandLess, ExpandMore } from "./icons";
-import { IconButton } from "./IconButton";
+import { Expander } from "./Expander";
+import { ComponentProps } from "mythikal/components/Component";
 
 const onSelectRight = Symbol();
 const SelectRight = eventData<Right>().link(onSelectRight);
 
 const onSelectRefinedRight = Symbol();
 const SelectRefinedRight = eventData<{}>().link(onSelectRefinedRight);
-
-interface ExpanderProps<M, V> extends ComponentProps<M, V> {
-    header: Bindable<M, V, string>;
-    content: TemplateContent<M, V>;
-}
-
-class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: ExpanderProps<M, V>) {
-        makeObservable(this);
-    }
-
-    @observable
-    expanded = false;
-
-    render() {
-        const parent = this.parent;
-        const parentView = this.parentView;
-        const props = this.props;
-        const content = props.content;
-        const header = unbind(parent, parentView, props.header);
-        return html`
-            <div class="${styles.panel} ${styles.horizontal}" style="fill: grey;">
-                ${IconButton({
-                    icon: this.expanded ? ExpandLess : ExpandMore,
-                    onClick: () => this.expanded = !this.expanded
-                }).render(this, this)}
-                <div style="padding-top: 0.313rem;">
-                    <span style="font-size: 0.875rem; font-weight: 500; text-decoration: ${this.expanded ? "underline" : "none"};">${header}</span>
-                </div>
-            </div>
-            <div style="padding: 0 0 0 2rem; display: ${this.expanded ? "block" : "none"}; transition: max-height 2s;">
-                <div style="flex-grow: 1;">
-                    ${renderTemplateContent(parent, parentView, content)}
-                </div>
-            </div>
-        `;
-    };
-}
-
-const expanderComp = makeReactiveLithComponent(Expander_);
-
-export function Expander<M, V>(props: ExpanderProps<M, V>): ComponentTemplate<M, V, ExpanderProps<M, V>> {
-    return new ComponentTemplate(props, expanderComp);
-}
 
 class RightItem { // NOTE: This is okay. Since this is leaf of state tree.
     constructor(readonly parent: TableLevelRights | KeyColumnLevelRights, readonly right: Right) {
@@ -185,6 +140,40 @@ class GrantRights {
     }
 }
 
+interface DataGridProps<M, V> extends ComponentProps<M, V> {
+}
+
+class DataGrid_<M, V> implements ReactiveLithComponent<M, V, DataGridProps<M, V>> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: DataGridProps<M, V>) {
+        makeObservable(this);
+    }
+
+    @observable
+    expanded = false;
+
+    render() {
+        const parent = this.parent;
+        const parentView = this.parentView;
+        const props = this.props;
+        return html`
+            <div style="display: grid; grid-template-columns: repeat(3, auto [col-start]); border-left: 1px solid black; border-top: 1px solid black;">
+                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Select</span></div>
+                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Name</span></div>
+                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Rights Granted</span></div>
+                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>[ ]</span></div>
+                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Abc Bcd</span></div>
+                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Yes</span></div>
+            </div>
+        `;
+    };
+}
+
+const dataGridComp = makeReactiveLithComponent(DataGrid_);
+
+export function DataGrid<M, V>(props: DataGridProps<M, V>): ComponentTemplate<M, V, DataGridProps<M, V>> {
+    return new ComponentTemplate(props, dataGridComp);
+}
+
 class RefineRights {
     constructor(readonly parent: RightsPage_) {
         
@@ -199,7 +188,7 @@ class RefineRights {
         <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem; border-right: 1px solid lightgrey;">
             <h5>RefineRights Title</h5>
             <div @click=${handleEvent((_e, m) => m.selectRefinedRight())}>
-                RefineRights Table
+                ${DataGrid({})}
             </div>
         </div>
     `
