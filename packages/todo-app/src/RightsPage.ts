@@ -3,7 +3,7 @@ import { observable, makeObservable, action } from "mobx";
 import { Button } from "mythikal";
 import styles from "./RightsPage.module.scss";
 import { SearchBox } from "./SearchBox";
-import { getRights } from "./session";
+import * as session from "./session";
 import * as _ from "lodash";
 import { Right } from "./AppModel";
 import { Expander } from "./Expander";
@@ -106,14 +106,76 @@ class TableLevelRights { // NOTE: Ancestors can be accessed via events (see inde
     }
 }
 
-class GrantRights {
-    constructor(readonly parent: RightsPage_) {
-        
+interface DataGridRowProps<M, V> extends ComponentProps<M, V> {
+    index: Bindable<M, V, number>
+}
+
+class DataGridRow_<M, V> implements ReactiveLithComponent<M, V, DataGridRowProps<M, V>> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: DataGridRowProps<M, V>) {
     }
+
+    render() {
+        const parent = this.parent;
+        const parentView = this.parentView;
+        const props = this.props;
+        const index = unbind(parent, parentView, props.index)
+        return html`
+            <div class="${styles.gridCell}"><span>[ ]</span></div>
+            <div class="${styles.gridCell}"><span>Abc Bcd ${index}</span></div>
+            <div class="${styles.gridCell}"><span>Yes</span></div>
+        `;
+    };
+}
+
+const dataGridRowComp = makeReactiveLithComponent(DataGridRow_);
+
+export function DataGridRow<M, V>(props: DataGridRowProps<M, V>): ComponentTemplate<M, V, DataGridRowProps<M, V>> {
+    return new ComponentTemplate(props, dataGridRowComp);
+}
+
+interface DataGridProps<M, V> extends ComponentProps<M, V> {
+    rows: TemplateContent<M, V>
+}
+
+class DataGrid_<M, V> implements ReactiveLithComponent<M, V, DataGridProps<M, V>> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: DataGridProps<M, V>) {
+    }
+
+    render() {
+        const parent = this.parent;
+        const parentView = this.parentView;
+        const props = this.props;
+        return html`
+            <div class="${styles.gridContainer}">
+                <div class="${styles.gridCell}"><span>Select</span></div>
+                <div class="${styles.gridCell}"><span>Name</span></div>
+                <div class="${styles.gridCell}"><span>Rights Granted</span></div>
+                ${renderTemplateContent(parent, parentView, props.rows)}
+            </div>
+        `;
+    };
+}
+
+const dataGridComp = makeReactiveLithComponent(DataGrid_);
+
+export function DataGrid<M, V>(props: DataGridProps<M, V>): ComponentTemplate<M, V, DataGridProps<M, V>> {
+    return new ComponentTemplate(props, dataGridComp);
+}
+
+class GrantRights {
+    constructor(readonly parent: RightsPage_, readonly rightName: string) {
+        makeObservable(this);
+        session.getRightsByRightName(rightName).then(r =>
+            this.rows = r.UserGrants
+        )
+    }
+
+    @observable.ref
+    rows: Object[] = [];
 
     static template = template<GrantRights>`
     <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem;">
-        <h5>GrantRights Title</h5>
+        <h5>access to ${bind(m => m.rightName)}</h5>
         <div class="${styles.panel} ${styles.horizontal}">
             ${SearchBox({})}
             ${Button({
@@ -130,7 +192,11 @@ class GrantRights {
             })}
         </div>
         <div>
-            GrantRights Table
+            ${DataGrid({
+                rows: template`
+                    ${bind(m => m.rows.map((r, i) => DataGridRow({ index: i }).render(m, m)))}
+                `
+            })}
         </div>
     </div>
 `
@@ -138,40 +204,6 @@ class GrantRights {
     render(): RenderResult {
         return GrantRights.template.render(this);
     }
-}
-
-interface DataGridProps<M, V> extends ComponentProps<M, V> {
-}
-
-class DataGrid_<M, V> implements ReactiveLithComponent<M, V, DataGridProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: DataGridProps<M, V>) {
-        makeObservable(this);
-    }
-
-    @observable
-    expanded = false;
-
-    render() {
-        const parent = this.parent;
-        const parentView = this.parentView;
-        const props = this.props;
-        return html`
-            <div style="display: grid; grid-template-columns: repeat(3, auto [col-start]); border-left: 1px solid black; border-top: 1px solid black;">
-                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Select</span></div>
-                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Name</span></div>
-                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Rights Granted</span></div>
-                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>[ ]</span></div>
-                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Abc Bcd</span></div>
-                <div style="border-bottom: 1px solid black; border-right: 1px solid black;"><span>Yes</span></div>
-            </div>
-        `;
-    };
-}
-
-const dataGridComp = makeReactiveLithComponent(DataGrid_);
-
-export function DataGrid<M, V>(props: DataGridProps<M, V>): ComponentTemplate<M, V, DataGridProps<M, V>> {
-    return new ComponentTemplate(props, dataGridComp);
 }
 
 class RefineRights {
@@ -188,7 +220,7 @@ class RefineRights {
         <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem; border-right: 1px solid lightgrey;">
             <h5>RefineRights Title</h5>
             <div @click=${handleEvent((_e, m) => m.selectRefinedRight())}>
-                ${DataGrid({})}
+                DataGrid
             </div>
         </div>
     `
@@ -212,14 +244,14 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
             }
             else {
                 this.refineRights = undefined;
-                this.grantRights = new GrantRights(this);
+                this.grantRights = new GrantRights(this, e.data.Name);
             }
         }
     }
 
     [onSelectRefinedRight](target: Model, _e: EventArgs<{}>) {
         if (target instanceof RefineRights) {
-            this.grantRights = new GrantRights(this);
+            this.grantRights = new GrantRights(this, ""); // TODO: remove empty string hack
         }
     }
 
@@ -227,10 +259,10 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
     refineRights?: RefineRights = new RefineRights(this); // TODO: uninitialize
 
     @observable.ref
-    grantRights?: GrantRights = new GrantRights(this); // TODO: uninitialize
+    grantRights?: GrantRights = new GrantRights(this, ""); // TODO: uninitialize
 
     refresh() {
-        getRights().then(result => {
+        session.getRights().then(result => {
             const rights = result.Items as unknown as Right[];
             this.tableLevelRights = _.entries(_.groupBy(rights, r => r.SchemaName + "." + r.TableName)).map(e => new TableLevelRights(this, e[0], e[1]))
         });
