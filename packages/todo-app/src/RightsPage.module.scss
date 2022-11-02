@@ -31,12 +31,18 @@ body {
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(3, auto [col-start]);
     border-left: 1px solid black;
-    border-top: 1px solid black;
+    overflow: auto;
 }
 
 .grid-cell {
     border-bottom: 1px solid black;
     border-right: 1px solid black;
+}
+
+.grid-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-top: 1px solid black;
 }

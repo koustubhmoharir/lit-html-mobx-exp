@@ -12,8 +12,14 @@ import { ComponentProps } from "mythikal/components/Component";
 const onSelectRight = Symbol();
 const SelectRight = eventData<Right>().link(onSelectRight);
 
+interface SpecificInfoIdentifier {
+    rightName: string;
+    keyColumnName: string;
+    keyColumnValue: string;
+}
+
 const onSelectRefinedRight = Symbol();
-const SelectRefinedRight = eventData<{}>().link(onSelectRefinedRight);
+const SelectRefinedRight = eventData<SpecificInfoIdentifier>().link(onSelectRefinedRight);
 
 class RightItem { // NOTE: This is okay. Since this is leaf of state tree.
     constructor(readonly parent: TableLevelRights | KeyColumnLevelRights, readonly right: Right) {
@@ -106,76 +112,47 @@ class TableLevelRights { // NOTE: Ancestors can be accessed via events (see inde
     }
 }
 
-interface DataGridRowProps<M, V> extends ComponentProps<M, V> {
-    index: Bindable<M, V, number>
-}
-
-class DataGridRow_<M, V> implements ReactiveLithComponent<M, V, DataGridRowProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: DataGridRowProps<M, V>) {
+class UserGrantRow {
+    constructor(readonly parent: GrantRights, readonly name: string, readonly email: string, readonly hasAccess: number) {        
     }
 
-    render() {
-        const parent = this.parent;
-        const parentView = this.parentView;
-        const props = this.props;
-        const index = unbind(parent, parentView, props.index)
-        return html`
-            <div class="${styles.gridCell}"><span>[ ]</span></div>
-            <div class="${styles.gridCell}"><span>Abc Bcd ${index}</span></div>
-            <div class="${styles.gridCell}"><span>Yes</span></div>
-        `;
-    };
-}
-
-const dataGridRowComp = makeReactiveLithComponent(DataGridRow_);
-
-export function DataGridRow<M, V>(props: DataGridRowProps<M, V>): ComponentTemplate<M, V, DataGridRowProps<M, V>> {
-    return new ComponentTemplate(props, dataGridRowComp);
-}
-
-interface DataGridProps<M, V> extends ComponentProps<M, V> {
-    rows: TemplateContent<M, V>
-}
-
-class DataGrid_<M, V> implements ReactiveLithComponent<M, V, DataGridProps<M, V>> {
-    constructor(readonly parent: M, readonly parentView: V, readonly props: DataGridProps<M, V>) {
+    static template = template<UserGrantRow>`
+        <div class="${styles.gridCell}" style="text-align: center"><input type="checkbox"></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.name)}</span></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.email)}</span></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.hasAccess)}</span></div>
+    `
+    
+    render(): RenderResult {
+        return UserGrantRow.template.render(this);
     }
-
-    render() {
-        const parent = this.parent;
-        const parentView = this.parentView;
-        const props = this.props;
-        return html`
-            <div class="${styles.gridContainer}">
-                <div class="${styles.gridCell}"><span>Select</span></div>
-                <div class="${styles.gridCell}"><span>Name</span></div>
-                <div class="${styles.gridCell}"><span>Rights Granted</span></div>
-                ${renderTemplateContent(parent, parentView, props.rows)}
-            </div>
-        `;
-    };
-}
-
-const dataGridComp = makeReactiveLithComponent(DataGrid_);
-
-export function DataGrid<M, V>(props: DataGridProps<M, V>): ComponentTemplate<M, V, DataGridProps<M, V>> {
-    return new ComponentTemplate(props, dataGridComp);
 }
 
 class GrantRights {
-    constructor(readonly parent: RightsPage_, readonly rightName: string) {
+    constructor(readonly parent: RightsPage_, readonly rightName: string, readonly keyColumnName: string, readonly keyColumnValue: string) {
         makeObservable(this);
-        session.getRightsByRightName(rightName).then(r =>
-            this.rows = r.UserGrants
-        )
+        if (keyColumnName === "") {
+            session.getRightsByRightName(rightName).then(r =>
+                this.rows = r.UserGrants.map(ug => new UserGrantRow(this, `${ug.FirstName} ${ug.LastName}`, ug.Email, ug.OverallAccess))
+            )
+        }
+        else { // TODO: There are empty rows in the result
+            session.getRightsByKeyColumnValue(rightName, keyColumnName, keyColumnValue).then(r =>
+                this.rows = r.UserGrants.map(ug => new UserGrantRow(this, `${ug.FirstName} ${ug.LastName}`, ug.Email, ug.OverallAccess))
+            )
+        }
     }
 
     @observable.ref
-    rows: Object[] = [];
+    rows: UserGrantRow[] = [];
 
     static template = template<GrantRights>`
     <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem;">
-        <h5>access to ${bind(m => m.rightName)}</h5>
+        <h5>access ${If({
+            condition: m => m.keyColumnName === "",
+            content: template`to ${bind(m => m.rightName)} at global scope`,
+            altContent: template`for ${bind(m => m.keyColumnName)} = ${bind(m => m.keyColumnValue)}`
+        })}</h5>
         <div class="${styles.panel} ${styles.horizontal}">
             ${SearchBox({})}
             ${Button({
@@ -191,12 +168,12 @@ class GrantRights {
                 onClick: () => {}
             })}
         </div>
-        <div>
-            ${DataGrid({
-                rows: template`
-                    ${bind(m => m.rows.map((r, i) => DataGridRow({ index: i }).render(m, m)))}
-                `
-            })}
+        <div class="${styles.gridContainer}" style="grid-template-columns: repeat(4, auto [col-start]);">
+            <div class="${styles.gridCell} ${styles.gridHeader}"><span>Select</span></div>
+            <div class="${styles.gridCell} ${styles.gridHeader}"><span>Name</span></div>
+            <div class="${styles.gridCell} ${styles.gridHeader}"><span>Email</span></div>
+            <div class="${styles.gridCell} ${styles.gridHeader}"><span>Rights Granted</span></div>
+            ${bindArray(m => m.rows)}
         </div>
     </div>
 `
@@ -206,21 +183,54 @@ class GrantRights {
     }
 }
 
-class RefineRights {
-    constructor(readonly parent: RightsPage_) {
-        
+class SpecificInfoRow {
+    constructor(readonly parent: RefineRights, readonly id: string, readonly name: string, readonly description: string, readonly grantStatus: string, readonly internetAccess: string) {
+        makeObservable(this);
     }
 
     @action
     selectRefinedRight() {
-        SelectRefinedRight.dispatch(this, {});
+        SelectRefinedRight.dispatch(this, {
+            rightName: this.parent.rightName,
+            keyColumnName: this.parent.keyColumn,
+            keyColumnValue: this.id
+        });
     }
+
+    static template = template<SpecificInfoRow>`
+        <div class="${styles.gridCell}" @click=${handleEvent((_e, m) => m.selectRefinedRight())}><span>${bind(m => m.id)}</span></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.name)}</span></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.description)}</span></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.grantStatus)}</span></div>
+        <div class="${styles.gridCell}"><span>${bind(m => m.internetAccess)}</span></div>
+    `
+    
+    render(): RenderResult {
+        return SpecificInfoRow.template.render(this);
+    }
+}
+
+class RefineRights {
+    constructor(readonly parent: RightsPage_, readonly rightName: string, readonly keyColumn: string) {
+        makeObservable(this);
+        session.getRightsByKeyColumn(rightName, keyColumn).then(r => {
+            this.rows = r.SpecificInfos.filter(s => s.ForUsers).map(s => new SpecificInfoRow(this, s.KeyColumnValue, s.DisplayValue1, s.DisplayValue2, `${s.RoleCount} ${s.UserCount}`, s.InternetAccess ?? ""))
+        })
+    }
+
+    @observable.ref
+    rows: SpecificInfoRow[] = [];
 
     static template = template<RefineRights>`
         <div class="${styles.panel} ${styles.vertical}" style="padding: 0 0.5rem; border-right: 1px solid lightgrey;">
-            <h5>RefineRights Title</h5>
-            <div @click=${handleEvent((_e, m) => m.selectRefinedRight())}>
-                DataGrid
+            <h5>${bind(m => m.rightName)} by ${bind(m => m.keyColumn)}</h5>
+            <div class="${styles.gridContainer}" style="grid-template-columns: repeat(5, auto [col-start]);">
+                <div class="${styles.gridCell} ${styles.gridHeader}"><span>Id</span></div>
+                <div class="${styles.gridCell} ${styles.gridHeader}"><span>Name</span></div>
+                <div class="${styles.gridCell} ${styles.gridHeader}"><span>Description</span></div>
+                <div class="${styles.gridCell} ${styles.gridHeader}"><span>Grant Status</span></div>
+                <div class="${styles.gridCell} ${styles.gridHeader}"><span>Internet Access</span></div>
+                ${bindArray(m => m.rows)}
             </div>
         </div>
     `
@@ -239,27 +249,27 @@ class RightsPage_ implements ReactiveLithComponent<undefined, undefined, {}> {
     [onSelectRight](target: Model, e: EventArgs<Right>) {
         if (target instanceof RightItem) {
             if (e.data.KeyColumnName !== "") {
-                this.refineRights = new RefineRights(this);
+                this.refineRights = new RefineRights(this, e.data.Name, e.data.KeyColumnName);
                 this.grantRights = undefined;
             }
             else {
                 this.refineRights = undefined;
-                this.grantRights = new GrantRights(this, e.data.Name);
+                this.grantRights = new GrantRights(this, e.data.Name, "", "");
             }
         }
     }
 
-    [onSelectRefinedRight](target: Model, _e: EventArgs<{}>) {
-        if (target instanceof RefineRights) {
-            this.grantRights = new GrantRights(this, ""); // TODO: remove empty string hack
+    [onSelectRefinedRight](target: Model, e: EventArgs<SpecificInfoIdentifier>) {
+        if (target instanceof SpecificInfoRow) {
+            this.grantRights = new GrantRights(this, e.data.rightName, e.data.keyColumnName, e.data.keyColumnValue);
         }
     }
 
     @observable.ref
-    refineRights?: RefineRights = new RefineRights(this); // TODO: uninitialize
+    refineRights?: RefineRights = new RefineRights(this, "", ""); // TODO: uninitialize
 
     @observable.ref
-    grantRights?: GrantRights = new GrantRights(this, ""); // TODO: uninitialize
+    grantRights?: GrantRights = new GrantRights(this, "", "", ""); // TODO: uninitialize
 
     refresh() {
         session.getRights().then(result => {
