@@ -1,6 +1,6 @@
 import { html } from 'lit-html';
-import { button } from "./Button"
-import { menu, menuItem } from "./Menu"
+import { Button } from "./Button"
+import { Menu, MenuItem } from "./Menu"
 
 // More on default export: https://storybook.js.org/docs/web-components/writing-stories/introduction#default-export
 export default {
@@ -20,13 +20,13 @@ export default {
 const Template = (args) => {
     return html`
         <div>
-            ${menu({
-                target: props => button({content: "Menu", onClick: props.toggle, root: props.ref}),
-                items: (menu) => [
-                    menuItem(menu, { content: "Item A" }),
-                    menuItem(menu, { content: "Item B" })
+            ${Menu({
+                content: Button({label: "Menu", onClick: (_, v) => v.toggle()}),
+                items: [
+                    MenuItem({ onClick: () => {}, content: "Item A" }),
+                    MenuItem({ onClick: () => {}, content: "Item B" })
                 ]
-            })}
+            }).render(this, this)}
             <p>
                 Something below the menu
             </p>
