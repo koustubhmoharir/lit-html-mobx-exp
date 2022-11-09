@@ -6,15 +6,17 @@ Two native HTML popovers
 
 ## Menu
 - Usage:
--  In early versions of the HTML specification, the <menu> element had an additional use case as a context menu. This functionality is considered obsolete and is not in the specification.
-- The <menu> tag is only supported in Firefox, and it only works for context menus.
+-  In early versions of the HTML specification, the `<menu>` element had an additional use case as a context menu. This functionality is considered obsolete and is not in the specification.
+- The `<menu>` tag is only supported in Firefox, and it only works for context menus.
  - Doesn't even seem to work there
 
 ## Dialog
 - Usage:
+    ```
     <dialog open>
         Dialog Content
     </dialog>
+    ```
 - The dialog tag is not supported in Safari and Edge (prior version 79).
  - According to [caniuse.com](https://caniuse.com/dialog) supported by all except IE and Opera Mini
 
@@ -29,4 +31,17 @@ Two native HTML popovers
 - `close()` method of the HTML dialog element is used to close the dialog
 - Gmail does not actually use dialog for new message
  - instead uses `order: 1; z-index: 1000;`
-- can use <header>, <section>, <footer> and <button> to provide structure
+- can use `<header>`, `<section>`, `<footer>` and `<button>` to provide structure
+
+### Evaluation
+
+- Alert / Prompt - **Yes** - `position: fixed;` and `showModal()`
+- Modal - **Yes**
+- Prevent background scroll - **No**
+- Menu - **Yes** - Can be implemented along with `ClickAwayListener` and `position: absolute; top: --y; margin-left: --x;`
+- Keyboard navigation - __TODO__
+- Popup button - **Yes** - Similar to Menu
+
+### Notes
+
+- Content has to be placed below the dialog
