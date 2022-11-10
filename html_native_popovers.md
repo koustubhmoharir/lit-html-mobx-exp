@@ -39,7 +39,7 @@ Two native HTML popovers
 - Modal - **Yes**
 - Prevent background scroll - **No**
 - Menu - **Yes** - Can be implemented along with `ClickAwayListener` and `position: absolute; top: --y; margin-left: --x;`
-- Keyboard navigation - __TODO__
+- Keyboard navigation - **Yes** - `focus()`, `onkeydown` event and using the `previousElementSibling` and `nextElementSibling` properties
 - Popup button - **Yes** - Similar to Menu
 
 ### Notes
