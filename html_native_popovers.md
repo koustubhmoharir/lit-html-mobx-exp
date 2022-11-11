@@ -19,6 +19,15 @@ Two native HTML popovers
     ```
 - The dialog tag is not supported in Safari and Edge (prior version 79).
  - According to [caniuse.com](https://caniuse.com/dialog) supported by all except IE and Opera Mini
+- Parent of the dialog element is the logical parent in the HTML tree
+
+### show() vs showModal()
+- `position: absolute` vs `position: fixed`
+- `showModal()` renders a `::backdrop` pseudo element
+ - can be styled with `dialog::backdrop` CSS selector
+- Logical order (next element placed above) and z-index of other element
+ - Takes precedence in `show()` - dialog gets hidden from view
+ - Doesn't matter in `showModal()` - dialog is displayed at the top
 
 ### Dialog case studies
 
@@ -33,15 +42,34 @@ Two native HTML popovers
  - instead uses `order: 1; z-index: 1000;`
 - can use `<header>`, `<section>`, `<footer>` and `<button>` to provide structure
 
+2. Dialog inside smaller div
+- `showModal()` works normally since position is fixed
+- `show()` does not affect its size or margins
+ - However, since position is absolute, it opens up starting at the y offset
+
+3. Dialog inside dialog
+- If `showModal()` done on both, the inner dialog renders above the outer one
+- If `show()` done on the inner dialog, the outer dialog dimensions stay the same
+ - Inner dialog is rendered within the outer, with scroll bars
+- If outer dialog is closed, then inner dialog also not shown
+ - This is due to the `display: none` CSS property
+
+4. "Sticky" position in menus
+- For this case, "sticky" would mean, if the page is scrolled after the menu is open, the menu would stay in view
+- In Gmail, the menu goes out of view with scroll
+- In mobile, action menu collapses on scroll (Vinay N)
+ - Depends on the context in which menu is used
+- For an infinite scrolling table, which trims it content (including state purge) once items go beyond viewport, a sticky menu or a state-preserved menu can likely cause implementation challenges
+
 ### Evaluation
 
 - Alert / Prompt - **Yes** - `position: fixed;` and `showModal()`
 - Modal - **Yes**
 - Prevent background scroll - **No**
-- Menu - **Yes** - Can be implemented along with `ClickAwayListener` and `position: absolute; top: --y; margin-left: --x;`
+- Menu - **Yes** - Can be implemented with `position: absolute; top: --y; margin-left: --x;`
 - Keyboard navigation - **Yes** - `focus()`, `onkeydown` event and using the `previousElementSibling` and `nextElementSibling` properties
 - Popup button - **Yes** - Similar to Menu
 
 ### Notes
 
-- Content has to be placed below the dialog
+- Content has to be placed below the dialog when in `show()` mode
