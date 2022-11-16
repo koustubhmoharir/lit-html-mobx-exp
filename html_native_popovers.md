@@ -23,11 +23,22 @@ Two native HTML popovers
 
 ### show() vs showModal()
 - `position: absolute` vs `position: fixed`
+    - `fixed` positions relative to the `<html>` element
 - `showModal()` renders a `::backdrop` pseudo element
 	- can be styled with `dialog::backdrop` CSS selector
+    - both display into the top layer
 - Logical order (next element placed above) and z-index of other element
 	- Takes precedence in `show()` - dialog gets hidden from view
 	- Doesn't matter in `showModal()` - dialog is displayed at the top
+
+### More on top layer
+- The top layer sits above its related document in the browser viewport
+- Top layer is outside of the document flow
+- Each document has one associated top layer.
+- Elements promoted to the top layer needn't worry about z-index or DOM hierarchy.
+- Each element in the top layer has a styleable ::backdrop pseudo-element.
+- Each element and ::backdrop generates a new stacking context.
+- Elements in the top layer are stacked in the order they appear in the set. The last one in, appears on top. If you want to promote an element, remove it, and add it again.
 
 ### Dialog case studies
 
@@ -60,6 +71,19 @@ Two native HTML popovers
 - In mobile, action menu collapses on scroll (Vinay N)
 	- Depends on the context in which menu is used
 - For an infinite scrolling table, which trims it content (including state purge) once items go beyond viewport, a sticky menu or a state-preserved menu can likely cause implementation challenges
+
+#### 5. Handling event listeners in backdrop
+- The pseudo-element does not exist in the DOM so it has no HTMLElementNode object representing it.
+- Backdrop clicks can be detected using the dialog bounding rect.
+    ```
+    dialog.addEventListener('click', function (event) {
+        let rect = dialog.getBoundingClientRect();
+        let isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
+        if (!isInDialog) {
+            dialog.close();
+        }
+    });
+    ```
 
 ### Evaluation
 
