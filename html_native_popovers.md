@@ -12,7 +12,7 @@ Two native HTML popovers
 
 ## Dialog
 - Usage:
-    ```
+    ```html
     <dialog open>
         Dialog Content
     </dialog>
@@ -75,7 +75,7 @@ Two native HTML popovers
 #### 5. Handling event listeners in backdrop
 - The pseudo-element does not exist in the DOM so it has no HTMLElementNode object representing it.
 - Backdrop clicks can be detected using the dialog bounding rect.
-    ```
+    ```js
     dialog.addEventListener('click', function (event) {
         let rect = dialog.getBoundingClientRect();
         let isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
@@ -87,13 +87,13 @@ Two native HTML popovers
 
 #### 6. Creating a popper with popperjs
 - HTML
-    ```
+    ```html
     <dialog id="popup">
         Using Popper.js!
     </dialog>
     ```
 - JS
-    ```
+    ```js
     ref.addEventListener("click", function () {
         popup.showModal();
         createPopper(ref, popup, {
