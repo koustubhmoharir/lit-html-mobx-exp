@@ -86,7 +86,6 @@ Two native HTML popovers
     ```
 
 ### Evaluation
-
 - Alert / Prompt - **Yes** - `position: fixed;` and `showModal()`
 - Modal - **Yes**
 - Prevent background scroll - **No**
@@ -95,5 +94,4 @@ Two native HTML popovers
 - Popup button - **Yes** - Similar to Menu
 
 ### Notes
-
 - Content has to be placed below the dialog when in `show()` mode
