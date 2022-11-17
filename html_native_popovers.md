@@ -85,6 +85,23 @@ Two native HTML popovers
     });
     ```
 
+#### 6. Creating a popper with popperjs
+- HTML
+    ```
+    <dialog id="popup">
+        Using Popper.js!
+    </dialog>
+    ```
+- JS
+    ```
+    ref.addEventListener("click", function () {
+        popup.showModal();
+        createPopper(ref, popup, {
+            placement: "bottom"
+        });
+    });
+    ```
+
 ### Evaluation
 - Alert / Prompt - **Yes** - `position: fixed;` and `showModal()`
 - Modal - **Yes**
