@@ -1,7 +1,7 @@
 /** @jsxImportSource realithy */
 import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, If } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { Input, Button, Menu, MenuItem } from "mythikal";
+import { Input, Button, Menu, MenuItem, Dialog } from "mythikal";
 
 interface DropItemData { itemId: number; }
 const onDropItem = Symbol();
