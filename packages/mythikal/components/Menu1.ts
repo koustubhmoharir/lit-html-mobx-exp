@@ -29,12 +29,13 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
     close() { this._isOpen = false; }
 
     render() {
-        // TODO: setup root ref
         const props = this.props;
         return html`
-            ${renderTemplateContent(this.parent, this, props.content)}
+            <div ${ref(this.contentRef)}>
+                ${renderTemplateContent(this.parent, this, props.content)}
+            </div>
             ${this._isOpen ? html`
-            <dialog ${ref(this._itemsContRef)} class=${styles.itemsContainer} open>
+            <dialog ${ref(this._itemsContRef)} class=${styles.itemsContainer}>
                 <ul>
                     ${props.items instanceof RepeatedTemplate ? props.items.render(this.parent, this.parentView, this) :
                     props.items.map(item => item.render(this.parent, this))}
@@ -46,9 +47,13 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
     }
 
     renderCompleted() {
-        if (this._isOpen && this.contentRef.value && this._itemsContRef.value && !this._popper)
-            this._popper = createPopper(this.contentRef.value, this._itemsContRef.value as HTMLElement);
+        let dialogElement = this._itemsContRef.value as HTMLDialogElement;
+        if (this._isOpen && this.contentRef.value && dialogElement && !this._popper) {
+            dialogElement.showModal();
+            this._popper = createPopper(this.contentRef.value, dialogElement);
+        }
         else if (!this._isOpen) {
+            //dialogElement.close();
             this._destroyPopper();
         }
     }
