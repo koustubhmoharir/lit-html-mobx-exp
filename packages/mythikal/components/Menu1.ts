@@ -35,12 +35,12 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
                 ${renderTemplateContent(this.parent, this, props.content)}
             </div>
             ${this._isOpen ? html`
-            <dialog ${ref(this._itemsContRef)} class="${styles.itemsContainer} ${styles.noBackdrop}">
-                <ul>
-                    ${props.items instanceof RepeatedTemplate ? props.items.render(this.parent, this.parentView, this) :
-                    props.items.map(item => item.render(this.parent, this))}
-                </ul>
-            </dialog>` :
+                <dialog ${ref(this._itemsContRef)} class="${styles.itemsContainer} ${styles.noBackdrop}" style="padding: 0">
+                    <ul style="margin: 0; padding: 0.5em 0; list-style-type: none; min-width: 7em">
+                        ${props.items instanceof RepeatedTemplate ? props.items.render(this.parent, this.parentView, this) :
+                        props.items.map(item => item.render(this.parent, this))}
+                    </ul>
+                </dialog>` :
                 nothing
             }
         `;
@@ -50,7 +50,7 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
         let dialogElement = this._itemsContRef.value as HTMLDialogElement;
         if (this._isOpen && this.contentRef.value && dialogElement && !this._popper) {
             dialogElement.showModal();
-            this._popper = createPopper(this.contentRef.value, dialogElement, { placement: 'bottom' });
+            this._popper = createPopper(this.contentRef.value, dialogElement, { placement: 'bottom-start' });
             const current = this;
             dialogElement.addEventListener('click', function (event) { // TODO: Check and clean up event listener
                 let rect = dialogElement.getBoundingClientRect();
@@ -100,7 +100,7 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
         const props = this.props;
         const root = unbind(this.parent, this.parentView, props.root);
         return html`
-            <li ${ref(root)} @click=${this}>
+            <li ${ref(root)} @click=${this} style="padding: 0 1em">
                 ${renderTemplateContent(this.parent, this.parentView, props.content)}
             </li>
         `;

@@ -7,7 +7,7 @@ import styles from "./PopupButton.module.scss";
 
 interface PopupButtonProps<M, V, T = any> extends ComponentProps<M, V> {
     content: TemplateContent<M, PopupButton_<M, V>>;
-    items: ReadonlyArray<ComponentTemplate<M, PopupButton_<M, V>, any>> | RepeatedTemplate<M, V, T, PopupButton_<M, V>>;
+    popupContent: TemplateContent<M, V>;
 }
 
 class PopupButton_<M, V> implements ReactiveLithComponent<M, V, PopupButtonProps<M, V>> {
@@ -29,18 +29,18 @@ class PopupButton_<M, V> implements ReactiveLithComponent<M, V, PopupButtonProps
     close() { this._isOpen = false; }
 
     render() {
+        const parent = this.parent;
+        const parentView = this.parentView;
         const props = this.props;
+        const popupContent = props.popupContent
         return html`
-            <div ${ref(this.contentRef)} style="width: fit-content; display: inline-block">
+            <div ${ref(this.contentRef)} style="width: fit-content; display: inline-block;">
                 ${renderTemplateContent(this.parent, this, props.content)}
             </div>
             ${this._isOpen ? html`
-            <dialog ${ref(this._itemsContRef)} class="${styles.itemsContainer} ${styles.noBackdrop}">
-                <ul>
-                    ${props.items instanceof RepeatedTemplate ? props.items.render(this.parent, this.parentView, this) :
-                    props.items.map(item => item.render(this.parent, this))}
-                </ul>
-            </dialog>` :
+                <dialog ${ref(this._itemsContRef)} class="${styles.itemsContainer} ${styles.noBackdrop}">
+                    ${renderTemplateContent(parent, parentView, popupContent)}
+                </dialog>` :
                 nothing
             }
         `;
@@ -50,7 +50,16 @@ class PopupButton_<M, V> implements ReactiveLithComponent<M, V, PopupButtonProps
         let dialogElement = this._itemsContRef.value as HTMLDialogElement;
         if (this._isOpen && this.contentRef.value && dialogElement && !this._popper) {
             dialogElement.showModal();
-            this._popper = createPopper(this.contentRef.value, dialogElement, { placement: 'bottom' });
+            this._popper = createPopper(this.contentRef.value, dialogElement, { placement: 'bottom-start' });
+            const current = this;
+            dialogElement.addEventListener('click', function (event) { // TODO: Check and clean up event listener
+                let rect = dialogElement.getBoundingClientRect();
+                let isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
+                if (!isInDialog || (isInDialog && (event.target !== this))) {
+                    dialogElement.close();
+                    current.close();
+                }
+            });
         }
         else if (!this._isOpen) {
             //dialogElement.close();
