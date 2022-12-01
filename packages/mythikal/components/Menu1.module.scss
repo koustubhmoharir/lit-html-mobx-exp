@@ -6,3 +6,7 @@
 .no-backdrop::backdrop {
     background: none;
 }
+
+.menu-item:focus {
+    background: blue;
+}

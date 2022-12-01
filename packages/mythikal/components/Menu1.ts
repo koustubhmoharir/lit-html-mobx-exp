@@ -50,7 +50,17 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
         let dialogElement = this._itemsContRef.value as HTMLDialogElement;
         if (this._isOpen && this.contentRef.value && dialogElement && !this._popper) {
             dialogElement.showModal();
-            this._popper = createPopper(this.contentRef.value, dialogElement, { placement: 'bottom-start' });
+            this._popper = createPopper(this.contentRef.value, dialogElement, {
+                placement: 'bottom-start',
+                modifiers: [
+                    {
+                        name: 'preventOverflow',
+                        options: {
+                            altAxis: true,
+                        }
+                    }
+                ]
+            });
             const current = this;
             dialogElement.addEventListener('click', function (event) { // TODO: Check and clean up event listener
                 let rect = dialogElement.getBoundingClientRect();
@@ -100,7 +110,31 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
         const props = this.props;
         const root = unbind(this.parent, this.parentView, props.root);
         return html`
-            <li ${ref(root)} @click=${this} style="padding: 0 1em">
+            <li ${ref(root)} tabindex="0" @click=${this} @keydown=${(e: KeyboardEvent) => {
+                if (e.key === "Enter") this.handleEvent();
+                if ((e.key !== "ArrowUp") && (e.key !== "ArrowDown")) return;
+                e.preventDefault();
+                const current = e.target as HTMLLIElement;
+                const first = current.parentElement!.firstElementChild as HTMLLIElement;
+                const last = current.parentElement!.lastElementChild as HTMLLIElement;
+                if (first === last) return;
+                else if (e.key === "ArrowUp") {
+                    if (current === first) {
+                        last.focus();
+                    }
+                    else {
+                        (current.previousElementSibling as HTMLLIElement).focus();
+                    }
+                }
+                else if (e.key === "ArrowDown") {
+                    if (current === last) {
+                        first.focus();
+                    }
+                    else {
+                        (current.nextElementSibling as HTMLLIElement).focus();
+                    }
+                }
+            }} class="${styles.menuItem}" style="padding: 0 1em">
                 ${renderTemplateContent(this.parent, this.parentView, props.content)}
             </li>
         `;
