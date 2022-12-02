@@ -70,6 +70,7 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
                     current.close();
                 }
             });
+            dialogElement.addEventListener('close', () => current.close());
         }
         else if (!this._isOpen) {
             //dialogElement.close();
@@ -112,7 +113,7 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
         const root = unbind(this.parent, this.parentView, props.root);
         const interactable = (props.interactable == undefined) ? true : unbind(this.parent, this.parentView, props.interactable);
         return html`
-            <li ${ref(root)} tabindex="0" @focus=${(e: FocusEvent) => {
+            <li ${ref(root)} tabindex="${interactable ? 0 : -1}" @focus=${(e: FocusEvent) => {
                 const current = e.target as HTMLLIElement;
                 if (current.classList.contains(styles.disabled)) {
                     const enabledItems = [...current.parentElement!.children].filter(c => (c.nodeName === "LI") && !c.classList.contains(styles.disabled));

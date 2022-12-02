@@ -59,6 +59,7 @@ class PopupButton_<M, V> implements ReactiveLithComponent<M, V, PopupButtonProps
                     current.close();
                 }
             });
+            dialogElement.addEventListener('close', () => current.close());
         }
         else if (!this._isOpen) {
             //dialogElement.close();
