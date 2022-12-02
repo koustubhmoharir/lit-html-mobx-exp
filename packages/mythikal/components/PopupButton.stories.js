@@ -28,7 +28,8 @@ const Template = (args) => {
                 content: Button({label: "Dialog Menu", onClick: (_, v) => v.toggle()}),
                 popupContent: template`
                     <div>
-                        Sample content
+                        <p>Sample content</p>
+                        ${Button({label: "Click to close", onClick: (_, v) => v.toggle()})}
                     </div>
                 `
             }).render(this, this)}

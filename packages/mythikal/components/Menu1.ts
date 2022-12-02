@@ -1,7 +1,7 @@
 import { createPopper, Instance as Popper } from '@popperjs/core';
 import { nothing } from 'lit-html';
 import { createRef, RefOrCallback } from 'lit-html/directives/ref.js';
-import { ComponentTemplate, html, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, TemplateContent, unbind } from 'realithy';
+import { Bindable, ComponentTemplate, html, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, TemplateContent, unbind } from 'realithy';
 import { ComponentProps } from './Component';
 import styles from "./Menu1.module.scss";
 
@@ -95,7 +95,8 @@ export function Menu1<M, V, T>(props: Menu1Props<M, V, T>): ComponentTemplate<M,
 
 interface Menu1ItemProps<M, V> extends ComponentProps<M, V> {
     onClick: (m: M, v: V) => void;
-    content: TemplateContent<M, V>
+    content: TemplateContent<M, V>;
+    interactable?: Bindable<M, V, boolean>;
 }
 class Menu1Item_<M, V extends Menu1_<any, any>> {
     constructor(readonly parent: M, readonly parentView: V, readonly props: Menu1ItemProps<M, V>) {
@@ -109,8 +110,21 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
     render() {
         const props = this.props;
         const root = unbind(this.parent, this.parentView, props.root);
+        const interactable = (props.interactable == undefined) ? true : unbind(this.parent, this.parentView, props.interactable);
         return html`
-            <li ${ref(root)} tabindex="0" @click=${this} @keydown=${(e: KeyboardEvent) => {
+            <li ${ref(root)} tabindex="0" @focus=${(e: FocusEvent) => {
+                const current = e.target as HTMLLIElement;
+                if (current.classList.contains(styles.disabled)) {
+                    const enabledItems = [...current.parentElement!.children].filter(c => (c.nodeName === "LI") && !c.classList.contains(styles.disabled));
+                    if (enabledItems.length === 0) {
+                        console.log("blur");
+                        current.blur();
+                    }
+                    else {
+                        (enabledItems[0] as HTMLLIElement)?.focus();
+                    }
+                }
+            }} @click=${this} @keydown=${(e: KeyboardEvent) => {
                 if (e.key === "Enter") this.handleEvent();
                 if ((e.key !== "ArrowUp") && (e.key !== "ArrowDown")) return;
                 e.preventDefault();
@@ -119,22 +133,20 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
                 const last = current.parentElement!.lastElementChild as HTMLLIElement;
                 if (first === last) return;
                 else if (e.key === "ArrowUp") {
-                    if (current === first) {
-                        last.focus();
+                    let prev = (current === first) ? last : current.previousElementSibling;
+                    while (prev!.nodeName === "HR" || prev!.classList.contains(styles.disabled)) {
+                        prev = (prev === first) ? last : prev!.previousElementSibling;
                     }
-                    else {
-                        (current.previousElementSibling as HTMLLIElement).focus();
-                    }
+                    (prev as HTMLLIElement).focus();
                 }
                 else if (e.key === "ArrowDown") {
-                    if (current === last) {
-                        first.focus();
+                    let next = (current === last) ? first : current.nextElementSibling;
+                    while (next!.nodeName === "HR" || next!.classList.contains(styles.disabled)) {
+                        next = (next === last) ? first : next!.nextElementSibling;
                     }
-                    else {
-                        (current.nextElementSibling as HTMLLIElement).focus();
-                    }
+                    (next as HTMLLIElement).focus();
                 }
-            }} class="${styles.menuItem}" style="padding: 0 1em">
+            }} class="${styles.menuItem} ${interactable ? "" : styles.disabled}" style="padding: 0 1em">
                 ${renderTemplateContent(this.parent, this.parentView, props.content)}
             </li>
         `;
@@ -143,4 +155,19 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
 const menu1ItemComp = makeReactiveLithComponent(Menu1Item_);
 export function Menu1Item<M, V extends Menu1_<any, any>>(props: Menu1ItemProps<M, V>): ComponentTemplate<M, V, Menu1ItemProps<M, V>> {
     return new ComponentTemplate(props, menu1ItemComp);
+}
+
+class Menu1Separator_<M, V> {
+    constructor(readonly parent: M, readonly parentView: V, readonly props: {}) {
+    }
+
+    render() {
+        return html`
+            <hr>
+        `;
+    }
+}
+const menu1SeparatorComp = makeReactiveLithComponent(Menu1Separator_);
+export function Menu1Separator<M, V>(props: {}): ComponentTemplate<M, V, {}> {
+    return new ComponentTemplate(props, menu1SeparatorComp);
 }

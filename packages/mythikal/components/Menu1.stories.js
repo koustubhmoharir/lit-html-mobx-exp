@@ -1,6 +1,6 @@
-import { html } from 'lit-html';
-import { Button } from "./Button"
-import { Menu1, Menu1Item } from "./Menu1"
+import { html, bind } from 'realithy';
+import { Button } from "./Button";
+import { Menu1, Menu1Item, Menu1Separator } from "./Menu1";
 
 // More on default export: https://storybook.js.org/docs/web-components/writing-stories/introduction#default-export
 export default {
@@ -16,7 +16,10 @@ export default {
     },
 };
 
-const menuItems = Array(100).fill().map((_, i) => Menu1Item({ onClick: () => {}, content: `Item ${i + 1}` }));
+const menuItems = Array(50).fill().map((_, i) => Menu1Item({ onClick: () => {}, content: `Item ${i + 1}` }));
+menuItems.splice(4, 0, Menu1Separator({}));
+menuItems.splice(0, 0, Menu1Item({ onClick: () => {}, content: `Disabled Item`, interactable: bind(_ => false) }));
+menuItems.splice(8, 0, Menu1Item({ onClick: () => {}, content: `Disabled Item`, interactable: bind(_ => false) }));
 
 // More on component templates: https://storybook.js.org/docs/web-components/writing-stories/introduction#using-args
 const Template = (args) => {

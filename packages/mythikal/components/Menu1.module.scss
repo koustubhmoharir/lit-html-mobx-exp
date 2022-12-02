@@ -10,3 +10,8 @@
 .menu-item:focus {
     background: blue;
 }
+
+.menu-item.disabled {
+    pointer-events:none;
+    opacity:0.6;
+}

@@ -5,7 +5,7 @@ import { ComponentProps } from "./Component";
 
 
 interface DialogProps<M, V> extends ComponentProps<M, V> {
-    open: boolean;
+    open: Bindable<M, V, boolean>;
     content?: TemplateContent<M, V>;
 }
 
@@ -30,11 +30,12 @@ class Dialog_<M, V> implements ReactiveLithComponent<M, V, DialogProps<M, V>> {
             `;
     }
     renderCompleted() {
+        const open = unbind(this.parent, this.parentView, this.props.open);
         let dialogElement = this._dialogRef.value as HTMLDialogElement;
-        if (this.props.open && dialogElement && dialogElement.isConnected && !dialogElement.open) {
+        if (open && dialogElement && dialogElement.isConnected && !dialogElement.open) {
             dialogElement.showModal();
         }
-        else if (!this.props.open && dialogElement && dialogElement.isConnected && dialogElement.open) {
+        else if (!open && dialogElement && dialogElement.isConnected && dialogElement.open) {
             dialogElement.close();
         }
     }
