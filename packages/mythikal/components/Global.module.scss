@@ -1,0 +1,40 @@
+.main-table {
+    margin-top: 1rem;
+}
+
+.toolbar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.panel {
+    display: flex;
+    align-content: flex-start;
+}
+
+.panel.horizontal {
+    flex-direction: row;
+}
+
+.panel.vertical {
+    flex-direction: column;
+}
+
+.grid-container {
+    display: grid;
+    border-left: 1px solid black;
+    overflow: auto;
+}
+
+.grid-cell {
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+}
+
+.grid-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-top: 1px solid black;
+}
