@@ -1,4 +1,20 @@
-.items-container {
-    border: solid 1px gray;
-    background-color: white;
+.expander svg {
+    transform: rotate(0deg);
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+.expander.expanded svg {
+    transform: rotate(180deg);
+}
+
+.expander-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+.expander-content.expanded {
+    max-height: 1000px; // TODO: Remove hardcoding
+    overflow: hidden;
+    transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }

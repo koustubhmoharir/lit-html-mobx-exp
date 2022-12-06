@@ -1,7 +1,7 @@
 import { createPopper, Instance as Popper } from '@popperjs/core';
 import { nothing } from 'lit-html';
 import { createRef, RefOrCallback } from 'lit-html/directives/ref.js';
-import { Bindable, ComponentTemplate, html, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, TemplateContent, unbind } from 'realithy';
+import { Bindable, ComponentTemplate, html, If, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, template, TemplateContent, unbind } from 'realithy';
 import { ComponentProps } from './Component';
 import styles from "./Expander.module.scss";
 import stylesg from "./Global.module.scss";
@@ -29,15 +29,17 @@ class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>
         const header = unbind(parent, parentView, props.header);
         return html`
             <div class="${stylesg.panel} ${stylesg.horizontal}" style="fill: grey;">
-                ${IconButton({
-                    icon: this.expanded ? ExpandLess : ExpandMore,
-                    onClick: () => this.expanded = !this.expanded
-                }).render(this, this)}
+                <div class="${styles.expander} ${this.expanded ? styles.expanded : ""}">
+                    ${IconButton({
+                        icon: ExpandMore,
+                        onClick: () => this.expanded = !this.expanded
+                    }).render(this, this)}
+                </div>
                 <div style="padding-top: 0.313rem;">
                     <span style="font-size: 0.875rem; font-weight: 500; text-decoration: ${this.expanded ? "underline" : "none"};">${header}</span>
                 </div>
             </div>
-            <div style="padding: 0 0 0 2rem; display: ${this.expanded ? "block" : "none"}; transition: max-height 2s;">
+            <div class="${styles.expanderContent} ${this.expanded ? styles.expanded : ""}" style="padding: 0 0 0 2rem;">
                 <div style="flex-grow: 1;">
                     ${renderTemplateContent(parent, parentView, content)}
                 </div>
