@@ -19,7 +19,7 @@ export default {
 const Template = (args) => {
     return html`
         ${Expander({
-            header: bind(_ => "Some Name"),
+            header: template`Some Name`,
             content: template`
                 <div>
                     <span>

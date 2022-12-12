@@ -1,7 +1,7 @@
 import { createPopper, Instance as Popper } from '@popperjs/core';
 import { nothing } from 'lit-html';
 import { createRef, RefOrCallback } from 'lit-html/directives/ref.js';
-import { Bindable, ComponentTemplate, html, If, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, template, TemplateContent, unbind } from 'realithy';
+import { ComponentTemplate, html, makeObservable, makeReactiveLithComponent, observable, ReactiveLithComponent, ref, RenderResult, renderTemplateContent, RepeatedTemplate, template, TemplateContent, unbind } from 'realithy';
 import { ComponentProps } from './Component';
 import styles from "./Expander.module.scss";
 import stylesg from "./Global.module.scss";
@@ -9,7 +9,7 @@ import { IconButton } from './IconButton';
 import { ExpandLess, ExpandMore } from './Icons';
 
 interface ExpanderProps<M, V> extends ComponentProps<M, V> {
-    header: Bindable<M, V, string>;
+    header: TemplateContent<M, V>;
     content: TemplateContent<M, V>;
 }
 
@@ -25,8 +25,8 @@ class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>
         const parent = this.parent;
         const parentView = this.parentView;
         const props = this.props;
+        const header = props.header;
         const content = props.content;
-        const header = unbind(parent, parentView, props.header);
         return html`
             <div class="${stylesg.panel} ${stylesg.horizontal}" style="fill: grey;">
                 <div class="${styles.expander} ${this.expanded ? styles.expanded : ""}">
@@ -35,8 +35,10 @@ class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>
                         onClick: () => this.expanded = !this.expanded
                     }).render(this, this)}
                 </div>
-                <div style="padding-top: 0.313rem;">
-                    <span style="font-size: 0.875rem; font-weight: 500; text-decoration: ${this.expanded ? "underline" : "none"};">${header}</span>
+                <div style="display: table;">
+                    <div style="display:table-cell; vertical-align:middle;">
+                        ${renderTemplateContent(parent, parentView, header)}
+                    </div>
                 </div>
             </div>
             <div class="${styles.expanderContent} ${this.expanded ? styles.expanded : ""}" style="padding: 0 0 0 2rem;">
