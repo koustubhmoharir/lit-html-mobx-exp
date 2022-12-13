@@ -5,6 +5,8 @@ import { ComponentTemplate, html, makeObservable, makeReactiveLithComponent, obs
 import { ComponentProps } from './Component';
 import styles from "./PopupButton.module.scss";
 
+// TODO: popper position control
+
 interface PopupButtonProps<M, V, T = any> extends ComponentProps<M, V> {
     content: TemplateContent<M, PopupButton_<M, V>>;
     popupContent: TemplateContent<M, PopupButton_<M, V>>;

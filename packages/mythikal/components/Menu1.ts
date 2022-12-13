@@ -5,6 +5,8 @@ import { Bindable, ComponentTemplate, html, makeObservable, makeReactiveLithComp
 import { ComponentProps } from './Component';
 import styles from "./Menu1.module.scss";
 
+// TODO: close on checkable checked, checkbox location (left | right), popper position control
+
 interface Menu1Props<M, V, T = any> extends ComponentProps<M, V> {
     content: TemplateContent<M, Menu1_<M, V>>;
     items: ReadonlyArray<ComponentTemplate<M, Menu1_<M, V>, any>> | RepeatedTemplate<M, V, T, Menu1_<M, V>>;
@@ -17,19 +19,20 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
     readonly contentRef = createRef();
     private readonly _itemsContRef = createRef();
     private _popper?: Popper
-
+    // TODO: Have selected item property
     @observable
     private _isOpen = false;
     get isOpen() { return this._isOpen; }
 
-    toggle() { this._isOpen = !this._isOpen; }
+    toggle() { this._isOpen = !this._isOpen; } // TODO: do ShowModal here
 
     open() { this._isOpen = true; }
 
     close() { this._isOpen = false; }
 
+    // TODO: To reuse same logic - e.g. we need this in popup button also
     render() {
-        const props = this.props;
+        const props = this.props; // TODO: always render dialog
         return html`
             <div ${ref(this.contentRef)} style="width: fit-content; display: inline-block">
                 ${renderTemplateContent(this.parent, this, props.content)}
@@ -46,7 +49,7 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
         `;
     }
 
-    renderCompleted() {
+    renderCompleted() {       
         let dialogElement = this._itemsContRef.value as HTMLDialogElement;
         if (this._isOpen && this.contentRef.value && dialogElement && !this._popper) {
             dialogElement.showModal();
@@ -63,6 +66,7 @@ class Menu1_<M, V> implements ReactiveLithComponent<M, V, Menu1Props<M, V>> {
             });
             const current = this;
             dialogElement.addEventListener('click', function (event) { // TODO: Check and clean up event listener
+                // TODO: Make declarative - put in dialog element
                 let rect = dialogElement.getBoundingClientRect();
                 let isInDialog = (rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
                 if (!isInDialog) {
@@ -94,6 +98,8 @@ export function Menu1<M, V, T>(props: Menu1Props<M, V, T>): ComponentTemplate<M,
     return new ComponentTemplate(props, menu1Comp);
 }
 
+// TODO: checkable, icon
+
 interface Menu1ItemProps<M, V> extends ComponentProps<M, V> {
     onClick: (m: M, v: V) => void;
     content: TemplateContent<M, V>;
@@ -108,24 +114,16 @@ class Menu1Item_<M, V extends Menu1_<any, any>> {
         this.props.onClick?.(this.parent, this.parentView);
     }
 
-    render() {
+    render() { // TODO: Figure out way to scroll (low-priority)
         const props = this.props;
         const root = unbind(this.parent, this.parentView, props.root);
         const interactable = (props.interactable == undefined) ? true : unbind(this.parent, this.parentView, props.interactable);
         return html`
-            <li ${ref(root)} tabindex="${interactable ? 0 : -1}" @focus=${(e: FocusEvent) => {
-                const current = e.target as HTMLLIElement;
-                if (current.classList.contains(styles.disabled)) {
-                    const enabledItems = [...current.parentElement!.children].filter(c => (c.nodeName === "LI") && !c.classList.contains(styles.disabled));
-                    if (enabledItems.length === 0) {
-                        console.log("blur");
-                        current.blur();
-                    }
-                    else {
-                        (enabledItems[0] as HTMLLIElement)?.focus();
-                    }
-                }
+            <li ${ref(root)} tabindex="${interactable ? 0 : nothing}" @focus=${(e: FocusEvent) => {
+                e.preventDefault();
+                (e.target as HTMLLIElement).scrollIntoView({block: "nearest"});
             }} @click=${this} @keydown=${(e: KeyboardEvent) => {
+                // TODO: Make use of selected item property of parent
                 if (e.key === "Enter") this.handleEvent();
                 if ((e.key !== "ArrowUp") && (e.key !== "ArrowDown")) return;
                 e.preventDefault();

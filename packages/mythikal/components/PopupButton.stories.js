@@ -29,7 +29,7 @@ const Template = (args) => {
                 popupContent: template`
                     <div>
                         <p>Sample content</p>
-                        ${Button({label: "Click to close", onClick: (_, v) => v.toggle()})}
+                        ${Button({label: "Click to close", onClick: (_, v) => v.close()})}
                     </div>
                 `
             }).render(this, this)}

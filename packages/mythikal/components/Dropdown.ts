@@ -4,6 +4,7 @@ import styles from "./Dropdown.module.scss";
 import { ComponentProps } from "./Component";
 import { Menu1, Menu1Item } from "./Menu1";
 
+// TODO: Replicate behaviour and expand API from current SK react implementation
 
 interface DropdownProps<M, V> extends ComponentProps<M, V> {
     onClick: (m: M, v: V) => void;

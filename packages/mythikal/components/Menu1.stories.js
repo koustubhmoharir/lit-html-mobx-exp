@@ -16,6 +16,8 @@ export default {
     },
 };
 
+// TODO: Use in todo-app
+
 const menuItems = Array(50).fill().map((_, i) => Menu1Item({ onClick: () => {}, content: `Item ${i + 1}` }));
 menuItems.splice(4, 0, Menu1Separator({}));
 menuItems.splice(0, 0, Menu1Item({ onClick: () => {}, content: `Disabled Item`, interactable: bind(_ => false) }));
