@@ -6,17 +6,19 @@ import { ComponentProps } from './Component';
 
 interface IconButtonProps<M, V> extends ComponentProps<M, V> {
     icon: TemplateResult<1>;
-    onClick: () => void;
+    onClick: (m: M, v: V) => void;
 }
 
 class IconButton_<M, V> implements ReactiveLithComponent<M, V, IconButtonProps<M, V>> {
     constructor(readonly parent: M, readonly parentView: V, readonly props: IconButtonProps<M, V>) {
         //makeObservable(this);
     }
-
+    handleEvent() {
+        this.props.onClick?.(this.parent, this.parentView);
+    }
     render() {
         return html`
-            <button @click=${this.props.onClick} style="min-width: 2rem; background:none; border:none; margin:0; padding:0.25rem; cursor: pointer;">
+            <button @click=${this} style="min-width: 2rem; background:none; border:none; margin:0; padding:0.25rem; cursor: pointer;">
                 ${this.props.icon}
             </button>
         `;

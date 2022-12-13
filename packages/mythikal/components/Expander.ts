@@ -8,6 +8,8 @@ import stylesg from "./Global.module.scss";
 import { IconButton } from './IconButton';
 import { ExpandLess, ExpandMore } from './Icons';
 
+// TODO: Control if content render on collapsed prop (boolean)
+
 interface ExpanderProps<M, V> extends ComponentProps<M, V> {
     header: TemplateContent<M, V>;
     content: TemplateContent<M, V>;
@@ -28,22 +30,17 @@ class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>
         const header = props.header;
         const content = props.content;
         return html`
-            <div class="${stylesg.panel} ${stylesg.horizontal}" style="fill: grey;">
-                <div class="${styles.expander} ${this.expanded ? styles.expanded : ""}">
-                    ${IconButton({
-                        icon: ExpandMore,
-                        onClick: () => this.expanded = !this.expanded
-                    }).render(this, this)}
-                </div>
-                <div style="display: table;">
-                    <div style="display:table-cell; vertical-align:middle;">
-                        ${renderTemplateContent(parent, parentView, header)}
+            <div>
+                <div class="${stylesg.panel} ${stylesg.horizontal}" style="fill: grey;">
+                    <div class="${styles.expander} ${this.expanded ? styles.expanded : ""}" @click=${() => this.expanded = !this.expanded}>
+                        ${ExpandMore}
                     </div>
+                    ${renderTemplateContent(parent, parentView, header)}
                 </div>
-            </div>
-            <div class="${styles.expanderContent} ${this.expanded ? styles.expanded : ""}" style="padding: 0 0 0 2rem;">
-                <div style="flex-grow: 1;">
-                    ${renderTemplateContent(parent, parentView, content)}
+                <div class="${styles.expanderContent} ${this.expanded ? styles.expanded : ""}" style="padding: 0 0 0 2rem;">
+                    <div style="flex-grow: 1;">
+                        ${renderTemplateContent(parent, parentView, content)}
+                    </div>
                 </div>
             </div>
         `;
