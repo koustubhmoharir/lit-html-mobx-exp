@@ -30,18 +30,14 @@ class Expander_<M, V> implements ReactiveLithComponent<M, V, ExpanderProps<M, V>
         const header = props.header;
         const content = props.content;
         return html`
-            <div>
-                <div class="${stylesg.panel} ${stylesg.horizontal}" style="fill: grey;">
-                    <div class="${styles.expander} ${this.expanded ? styles.expanded : ""}" @click=${() => this.expanded = !this.expanded}>
+            <div class="${styles.expander} ${this.expanded ? styles.expanded : ""} ${stylesg.panel} ${stylesg.vertical}">
+                <div class="${stylesg.panel} ${stylesg.horizontal}">
+                    <div @click=${() => this.expanded = !this.expanded}>
                         ${ExpandMore}
                     </div>
                     ${renderTemplateContent(parent, parentView, header)}
                 </div>
-                <div class="${styles.expanderContent} ${this.expanded ? styles.expanded : ""}" style="padding: 0 0 0 2rem;">
-                    <div style="flex-grow: 1;">
-                        ${renderTemplateContent(parent, parentView, content)}
-                    </div>
-                </div>
+                ${renderTemplateContent(parent, parentView, content)}
             </div>
         `;
     };
