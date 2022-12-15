@@ -1,7 +1,7 @@
 /** @jsxImportSource realithy */
 import { html, render, repeat, eventData, EventArgs, Handler, Model, RenderResult, template, bind, handleEvent, bindArray, makeReactiveLithComponent, If } from "realithy";
 import { observable, makeObservable, action } from "mobx";
-import { Input, Button, Menu, MenuItem, Dialog, openDialog, DialogBase } from "mythikal";
+import { Input, Button, Menu, MenuItem } from "mythikal";
 
 interface DropItemData { itemId: number; }
 const onDropItem = Symbol();
@@ -106,20 +106,6 @@ class List implements Model {
     }
 }
 
-class DialogCustom extends DialogBase {
-    resolver: (value: unknown) => void = () => {};
-    render() {
-      return html`
-        <div>
-          <h1>Header</h1>
-          <p>And paragraph</p>
-          <button @click=${() => this.resolver(true)}>Confirm</button>
-          <button @click=${() => this.resolver(false)}>Cancel</button>
-        </div>
-      `
-    }
-  }
-
 class Test {
     constructor() {
         for (let index = 0; index < 5; index++) {
@@ -158,12 +144,6 @@ class Test {
 
     static template = template<Test>`
         <div>
-            ${Button({
-                label: "Open Dialog",
-                onClick: () => {
-                openDialog(new DialogCustom()).then(r => console.log(r))
-                }
-            })}
             <span>Click count is:</span>
             <span>${bind(m => m.counter)}</span>
             <br>
